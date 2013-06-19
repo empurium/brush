@@ -1,0 +1,9 @@
+{
+	"name": "brush",
+	"version": "0.1",
+	"private": false,
+	"engines": {"node": "0.10.2"},
+	"dependencies": {
+		"node-exif": "0.3.x"
+	}
+}
