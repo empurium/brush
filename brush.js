@@ -1,72 +1,65 @@
-var fs           = require('fs');
-var mongo        = require('mongodb');
-var ExifImage    = require('exif').ExifImage;
+var async     = require('async');
+var fs        = require('fs');
+var ExifImage = require('exif').ExifImage;
+var mongoskin = require('mongoskin');
+
+var db        = mongoskin.db('localhost/brush?auto_reconnect');
+var Events    = db.collection('events');
 
 // no trailing slash
-var allEventsDir = '/space/Unsorted/Pictures/Picasa';
+var allEventsDir = 'Pictures';
 var exifTypes    = /jpg/i;
+var slashType    = '\\'; // use \ on Windows
 
 fs.readdir(allEventsDir, function(err, events) {
-	for (var i = 0; i < events.length; i++) {
-		var eventDir = allEventsDir + '/' + events[i];
+	if (err) throw err;
 
-		console.log(eventDir);
+	async.eachLimit( events, 1, function iter(eventName, next){
+		var eventDir = allEventsDir + slashType + eventName;
+		processEvent(eventDir, eventName);
 
-		processEvent(eventDir, events[i]);
-	}
+		next();
+	},
+	function done(err){
+		console.log('done!');
+	});
 });
 
 
 function processEvent(eventDir, eventName) {
+	console.log(' -- ' + eventDir);
+
 	var eventStart = new Date();
 	var eventEnd   = new Date();
 
 	var files = fs.readdirSync(eventDir);
-	for (var i = 0; i < files.length; i++) {
-		var filePath = eventDir + '/' + files[i];
+	async.eachLimit( files, 1, function iter(fileName, next){
+		var filePath = eventDir + slashType + fileName;
 
-		if (files[i] === '.picasa.ini') {
+		if (fileName === '.picasa.ini') {
 			parsePicasaIni(filePath);
-			continue;
+			next();
 		}
 
-		var r = files[i].match(/\.(\w{3,4})$/);
-		if (r && r.length > 0) {
-			var fileExt = r[1];
-		}
+		getFileDate(filePath, function (err, fileDate) {
+			console.log(filePath + ' taken ' + fileDate);
 
-		// check exif data first
-		if (fileExt && fileExt.match(exifTypes)) {
-			new ExifImage({ image: filePath }, function(err, exif) {
-				//if (err) throw err;
+			if (fileDate < eventStart) {
+				eventStart = fileDate;
+				eventEnd   = eventStart;
+			}
+			if (fileDate > eventEnd) {
+				eventEnd = fileDate;
+			}
 
-				console.log(filePath + ': ');
-				//console.log(exif);
-				//console.log('exif.image.ModifyDate: ' + exif.image.ModifyDate);
-				//console.log('exif.exif.CreateDate: ' + exif.exif.CreateDate);
-				//console.log('exif.exif.DateTimeOriginal: ' + exif.exif.DateTimeOriginal);
-
-				if (exif.exif.DateTimeOriginal) {
-					imageDate = parseDate(exif.exif.DateTimeOriginal);
-					//console.log(imageDate);
-
-					if (imageDate < eventStart) {
-						eventStart = imageDate;
-					}
-					else if (imageDate > eventEnd) {
-						eventEnd = imageDate;
-					}
-				}
-			});
-		}
-
-		// fall back to timestamps (unreliable)
-		/*
-		fs.stat(filePath, function(err, stat) {
-			console.log(stat);
+			next();
 		});
-		*/
-	}
+	},
+	function done(err){
+		console.log(' -- ' + eventName + ' started: ' + eventStart);
+		console.log(' -- ' + eventName + ' ended: ' + eventEnd + "\n\n");
+		console.log(' -- Done with ' + eventName + '!');
+	});
 }
 
 function parsePicasaIni(path) {
@@ -77,8 +70,58 @@ function parsePicasaIni(path) {
 	*/
 }
 
-function parseDate(exifDateString) {
+function parseDate(dateString) {
 	// 2012:10:30 19:09:16
-	var parts = exifDateString.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+	var parts = dateString.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
 	return new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5], parts[6]);
+}
+
+function getFileDate(filePath, callback) {
+	var r = filePath.match(/\.(\w{3,4})$/);
+	if (r && r.length > 0) {
+		var fileExt = r[1];
+	}
+
+	// check exif data first
+	/*
+	if (fileExt && fileExt.match(exifTypes)) {
+		new ExifImage({ image: filePath }, function(err, exif) {
+			//if (err) throw err;
+
+			console.log(filePath + ': ');
+			//console.log(exif);
+			//console.log('exif.image.ModifyDate: ' + exif.image.ModifyDate);
+			//console.log('exif.exif.CreateDate: ' + exif.exif.CreateDate);
+			//console.log('exif.exif.DateTimeOriginal: ' + exif.exif.DateTimeOriginal);
+
+			if (exif.exif.DateTimeOriginal) {
+				var fileDate = parseDate(exif.exif.DateTimeOriginal);
+				//console.log(fileDate);
+
+				if (fileDate < eventStart) {
+					eventStart = fileDate;
+				}
+				else if (fileDate > eventEnd) {
+					eventEnd = fileDate;
+				}
+			}
+		});
+	}
+	*/
+
+	// fall back to timestamps (unreliable)
+	var fileDate = false;
+	fs.stat(filePath, function(err, stat) {
+		fileDate = stat.mtime;
+		if (fileDate === false) {
+			fileDate = stat.ctime;
+		}
+		if (fileDate === false) {
+			fileDate = stat.atime;
+		}
+
+		if (typeof callback === 'function') {
+			callback(err, fileDate);
+		}
+	});
 }
