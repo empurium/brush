@@ -4,7 +4,8 @@
 	"private": false,
 	"engines": {"node": "0.10.2"},
 	"dependencies": {
-		"node-exif": "0.3.x",
-		"mongoskin": "0.5.x"
+		"exif": "0.3.x",
+		"mongoskin": "0.5.x",
+		"async": "0.2.x"
 	}
 }
