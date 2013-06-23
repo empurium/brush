@@ -42,7 +42,7 @@ function processEvent(eventDir, eventName) {
 		}
 
 		getFileDate(filePath, function (err, fileDate) {
-			console.log(filePath + ' taken ' + fileDate);
+			//console.log(filePath + ' taken ' + fileDate);
 
 			if (fileDate < eventStart) {
 				eventStart = fileDate;
@@ -57,8 +57,8 @@ function processEvent(eventDir, eventName) {
 	},
 	function done(err){
 		console.log(' -- ' + eventName + ' started: ' + eventStart);
-		console.log(' -- ' + eventName + ' ended: ' + eventEnd + "\n\n");
-		console.log(' -- Done with ' + eventName + '!');
+		console.log(' -- ' + eventName + ' ended: ' + eventEnd + "");
+		console.log(' -- Done with ' + eventName + '!\n\n');
 	});
 }
 
@@ -114,10 +114,10 @@ function getFileDate(filePath, callback) {
 	fs.stat(filePath, function(err, stat) {
 		fileDate = stat.mtime;
 		if (fileDate === false) {
-			fileDate = stat.ctime;
+			fileDate = stat.mtime;
 		}
 		if (fileDate === false) {
-			fileDate = stat.atime;
+			fileDate = stat.mtime;
 		}
 
 		if (typeof callback === 'function') {
