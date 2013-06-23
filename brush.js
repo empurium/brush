@@ -39,21 +39,21 @@ function processEvent(eventDir, eventName) {
 		if (fileName === '.picasa.ini') {
 			parsePicasaIni(filePath);
 			next();
+		} else {
+			getFileDate(filePath, function (err, fileDate) {
+				//console.log(filePath + ' taken ' + fileDate);
+
+				if (fileDate < eventStart) {
+					eventStart = fileDate;
+					eventEnd   = eventStart;
+				}
+				if (fileDate > eventEnd) {
+					eventEnd = fileDate;
+				}
+
+				next();
+			});
 		}
-
-		getFileDate(filePath, function (err, fileDate) {
-			//console.log(filePath + ' taken ' + fileDate);
-
-			if (fileDate < eventStart) {
-				eventStart = fileDate;
-				eventEnd   = eventStart;
-			}
-			if (fileDate > eventEnd) {
-				eventEnd = fileDate;
-			}
-
-			next();
-		});
 	},
 	function done(err){
 		console.log(' -- ' + eventName + ' started: ' + eventStart);
