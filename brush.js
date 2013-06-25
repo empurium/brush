@@ -69,18 +69,18 @@ function processEvent(eventDir, eventName) {
 		var newFilePath = newEventDir + slash + fileName;
 
 		mkdirp(newEventDir, function(err) {
-			//console.log(' - OLD: ' + filePath);
-			//console.log(' - NEW: ' + newFilePath);
-			console.log(' - ' + filePath + ' -> ' + newFilePath);
-			fs.rename(filePath, newFilePath);
+			fs.rename(filePath, newFilePath, function(err) {
+				eventFiles.push(newFilePath);
+				console.log(' - ' + filePath + ' -> ' + newFilePath);
+			});
 		});
 
 		next();
 	},
 	function done(err) {
 		console.log(' - started: ' + eventStart);
-		console.log(' - ended: ' + eventEnd + "");
-		//updateDB(eventName, eventStart, eventEnd, eventFiles);
+		console.log(' - ended: ' + eventEnd);
+		updateDB(eventName, eventStart, eventEnd, eventFiles);
 	});
 
 	console.log(' -- Done with ' + eventName + '!\n\n');
@@ -152,36 +152,30 @@ function parsePicasaIni(path) {
 
 function updateDB(name, start, end, files) {
 	// skew start/end for fuzzy matching?
-	var event = Events.findOne({
-		start: { $gt: start, $lt: end }
-	});
-	console.log(' - Event search found: ' + event);
 
-	if (event && event.id) {
-		Events.update(
-			{ _id: event.id },
-			{
-				$set: {
-					start: start,
-					end:   end,
-					files: files
+	Events.findOne({ start: { $gt: start, $lt: end } }, function(err, event) {
+		if (event && event.id) {
+			Events.update(
+				{ _id: event.id },
+				{
+					set: {
+						start: start,
+						end:   end,
+						files: files
+					},
 				},
-			},
-			{ upsert: true }
-		);
-		console.log(' - Updated DB: ' + name);
-	}
-	else {
-		Events.insert(
-			{
-				$set: {
-					start: start,
-					end:   end,
-					files: files
-				},
-			},
-			{ upsert: true }
-		);
-		console.log(' - Created DB: ' + name);
-	}
+				{ upsert: true }
+			);
+			console.log(' - Updated DB: ' + name);
+		}
+		else {
+			Events.insert({
+				name:  name,
+				start: start,
+				end:   end,
+				files: files
+			});
+			console.log(' - Created DB: ' + name);
+		}
+	});
 }
