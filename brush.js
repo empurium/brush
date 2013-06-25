@@ -7,10 +7,10 @@ var mongoskin = require('mongoskin');
 var db        = mongoskin.db('localhost/brush?auto_reconnect');
 var Events    = db.collection('events');
 
-var unsortedDir = 'Pictures'; // no trailing slash
-var archiveDir  = 'Archive'; // no trailing slash
+var unsortedDir = '/space/Unsorted/Pictures/Picasa'; // no trailing slash
+var archiveDir  = 'Archive';  // no trailing slash
 var exifTypes   = /jpg/i;
-var slash       = '\\'; // use '\\' on Windows
+var slash       = '/';        // use '\\' on Windows
 
 // find all event directories and process them
 fs.readdir(unsortedDir, function(err, events) {
@@ -65,6 +65,9 @@ function processEvent(eventDir, eventName) {
 		    month = month < 10 ? '0' + month : month;
 		var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
 
+		// search for event(s) that have ANY time overlap with this event
+		// we will just WARN about overlapping events at first, eventually prompt
+
 		// process each file to figure out this event
 		var files = fs.readdirSync(eventDir);
 		async.eachLimit(files, 1, function iter(fileName, next) {
@@ -86,7 +89,7 @@ function processEvent(eventDir, eventName) {
 		function done(err) {
 			console.log(' - started: ' + eventStart);
 			console.log(' - ended: ' + eventEnd);
-			updateDB(eventName, eventStart, eventEnd, eventFiles);
+			saveEvent(eventName, eventStart, eventEnd, eventFiles);
 		});
 	});
 
@@ -157,32 +160,41 @@ function parsePicasaIni(path) {
 	*/
 }
 
-function updateDB(name, start, end, files) {
-	// skew start/end for fuzzy matching?
+function findEventsOverlapping(start, end, callback) {
+	// skew start/end for fuzzy matching of event timeframe overlaps
+	// calculate total event minutes, shrink/grow by a percentage
+	var msPerMin = 60000;
+	var fuzzyStartBig   = new Date(start - (fuzzyTime * msPerMin));
+	var fuzzyEndBig     = new Date(end   + (fuzzyTime * msPerMin));
+	var fuzzyStartSmall = new Date(start + (fuzzyTime * msPerMin));
+	var fuzzyEndSmall   = new Date(end   - (fuzzyTime * msPerMin));
 
-	Events.findOne({ start: { $gt: start, $lt: end } }, function(err, event) {
-		if (event && event.id) {
-			Events.update(
-				{ _id: event.id },
-				{
-					set: {
-						start: start,
-						end:   end,
-						files: files
-					},
-				},
-				{ upsert: true }
-			);
-			console.log(' - Updated DB: ' + name);
-		}
-		else {
-			Events.insert({
-				name:  name,
-				start: start,
-				end:   end,
-				files: files
-			});
-			console.log(' - Created DB: ' + name);
+	//         [_7:00pm______ Event 1 __________8:00pm_]
+	//
+	//   [_6:45pm________7:30pm_]
+	//              [_7:15pm____________7:45pm_]
+	//                                [_7:35pm___________8:30pm_]
+	/*
+	Events.findOne({
+		$or: [
+			{ start: { $lt: fuzzyStart }, end: { $gt: fuzzyEnd } }, // beginning overlaps
+			{ start: { $lt: fuzzyStart }, end: { $gt: fuzzyEnd } }, // occurs within
+			{ start: { $lt: fuzzyStart }, end: { $gt: fuzzyEnd } }  // end overlaps
+		]
+	}, function(err, event) {
+		if (typeof callback === 'function') {
+			callback(err, event);
 		}
 	});
+	*/
+}
+
+function saveEvent(name, start, end, files) {
+	Events.insert({
+		name:  name,
+		start: start,
+		end:   end,
+		files: files
+	});
+	console.log(' - Created DB: ' + name);
 }
