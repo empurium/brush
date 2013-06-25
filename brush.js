@@ -48,7 +48,7 @@ function processEvent(eventDir, eventName) {
 			parsePicasaIni(filePath);
 		} else {
 			getFileDate(filePath, function (err, fileDate) {
-				//console.log(filePath + ' taken ' + fileDate);
+				//console.log(' - ' + fileName + ' taken ' + fileDate);
 
 				if (fileDate < eventStart) {
 					eventStart = fileDate;
@@ -71,6 +71,7 @@ function processEvent(eventDir, eventName) {
 		mkdirp(newEventDir, function(err) {
 			//console.log(' - OLD: ' + filePath);
 			//console.log(' - NEW: ' + newFilePath);
+			console.log(' - ' + filePath + ' -> ' + newFilePath);
 			fs.rename(filePath, newFilePath);
 		});
 
@@ -83,14 +84,6 @@ function processEvent(eventDir, eventName) {
 	});
 
 	console.log(' -- Done with ' + eventName + '!\n\n');
-}
-
-function parsePicasaIni(path) {
-	/*
-	fs.readFile(path, 'ascii', function(err, data) {
-		console.log(data);
-	});
-	*/
 }
 
 function parseDate(dateString) {
@@ -147,6 +140,14 @@ function getFileDate(filePath, callback) {
 			callback(err, fileDate);
 		}
 	});
+}
+
+function parsePicasaIni(path) {
+	/*
+	fs.readFile(path, 'ascii', function(err, data) {
+		console.log(data);
+	});
+	*/
 }
 
 function updateDB(name, start, end, files) {
