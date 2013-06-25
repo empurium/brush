@@ -60,14 +60,14 @@ function processEvent(eventDir, eventName) {
 	},
 	// now move the files to their new archived location
 	function done(err) {
+		var year  = eventStart.getFullYear();
+		var month = eventStart.getMonth() * 1 + 1;
+		    month = month < 10 ? '0' + month : month;
+		var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
+
 		// process each file to figure out this event
 		var files = fs.readdirSync(eventDir);
 		async.eachLimit(files, 1, function iter(fileName, next) {
-			var year  = eventStart.getFullYear();
-			var month = eventStart.getMonth() * 1 + 1;
-			    month = month < 10 ? '0' + month : month;
-			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
-
 			var filePath    = eventDir + slash + fileName;
 			var newFilePath = newEventDir + slash + fileName;
 
