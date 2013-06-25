@@ -37,14 +37,14 @@ function processEvent(eventDir, eventName) {
 	var eventEnd   = new Date();
 	var eventFiles = [];
 
-	var files = fs.readdirSync(eventDir);
-
 	// process each file to figure out this event
+	var files = fs.readdirSync(eventDir);
 	async.eachLimit(files, 1, function iter(fileName, next) {
 		var filePath = eventDir + slash + fileName;
 
 		if (fileName === '.picasa.ini') {
 			parsePicasaIni(filePath);
+			next();
 		} else {
 			getFileDate(filePath, function(err, fileDate) {
 				if (fileDate < eventStart) {
@@ -54,24 +54,21 @@ function processEvent(eventDir, eventName) {
 				if (fileDate > eventEnd) {
 					eventEnd = fileDate;
 				}
+				next();
 			});
 		}
-
-		next();
 	},
 	// now move the files to their new archived location
 	function done(err) {
-		var files = fs.readdirSync(eventDir);
-
 		// process each file to figure out this event
+		var files = fs.readdirSync(eventDir);
 		async.eachLimit(files, 1, function iter(fileName, next) {
-			var filePath = eventDir + slash + fileName;
-
 			var year  = eventStart.getFullYear();
 			var month = eventStart.getMonth() * 1 + 1;
 			    month = month < 10 ? '0' + month : month;
-
 			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
+
+			var filePath    = eventDir + slash + fileName;
 			var newFilePath = newEventDir + slash + fileName;
 
 			mkdirp(newEventDir, function(err) {
