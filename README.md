@@ -1,4 +1,4 @@
-## brush
+# brush
 
 Brush is a handy script to help you organize your pictures into a directory structure
 that is more suitable for permanent storage. It will also save the events that it
@@ -8,14 +8,14 @@ For example, it will scan through a directory of "Events", read the EXIF data (o
 back to file time stamps) to determine the Start and End times of an event, then place
 them into a directory structure which includes the date:
 
-# This structure
+## This structure
 * Imported Pictures/
 	* Surfing In Hawaii/
 	* Luau On The Beach/
 	* Camping At Panguitch Lake/
 	* Formula Drift at the Las Vegas Speedway/
 
-# Becomes this structure
+## Becomes this structure
 * Sorted Pictures/
 	* 2012/
 		* 05/
@@ -46,5 +46,7 @@ is why I put together Picasa's brush.
 * Test everything when running with EXIF dates
 * Search for overlapping events, warn if any are found
 * Parse Picasa.ini, note hidden / starred files in MongoDB
-* 
 * Clean up output
+
+## Eventually
+* Fuzzy search for overlapping events, warn in case merge is necessary (other people's cameras)
