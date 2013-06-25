@@ -8,7 +8,7 @@ var db        = mongoskin.db('localhost/brush?auto_reconnect');
 var Events    = db.collection('events');
 
 var unsortedDir = 'Pictures'; // no trailing slash
-var archiveDir  = 'Archived'; // no trailing slash
+var archiveDir  = 'Archive'; // no trailing slash
 var exifTypes   = /jpg/i;
 var slash       = '\\'; // use '\\' on Windows
 
@@ -47,7 +47,7 @@ function processEvent(eventDir, eventName) {
 		if (fileName === '.picasa.ini') {
 			parsePicasaIni(filePath);
 		} else {
-			getFileDate(filePath, function (err, fileDate) {
+			getFileDate(filePath, function(err, fileDate) {
 				//console.log(' - ' + fileName + ' taken ' + fileDate);
 
 				if (fileDate < eventStart) {
@@ -69,13 +69,15 @@ function processEvent(eventDir, eventName) {
 		var newFilePath = newEventDir + slash + fileName;
 
 		mkdirp(newEventDir, function(err) {
-			fs.rename(filePath, newFilePath, function(err) {
-				eventFiles.push(newFilePath);
-				console.log(' - ' + filePath + ' -> ' + newFilePath);
+			fs.stat(filePath, function(err, stat) {
+				fs.rename(filePath, newFilePath, function(err) {
+					fs.utimesSync(newFilePath, stat.atime, stat.mtime); // preservation
+					eventFiles.push(newFilePath);
+					console.log(' - ' + filePath + ' -> ' + newFilePath);
+					next();
+				});
 			});
 		});
-
-		next();
 	},
 	function done(err) {
 		console.log(' - started: ' + eventStart);
