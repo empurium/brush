@@ -1,3 +1,4 @@
+var mkdirp    = require('mkdirp');
 var async     = require('async');
 var fs        = require('fs');
 var ExifImage = require('exif').ExifImage;
@@ -6,39 +7,45 @@ var mongoskin = require('mongoskin');
 var db        = mongoskin.db('localhost/brush?auto_reconnect');
 var Events    = db.collection('events');
 
-// no trailing slash
-var allEventsDir = 'Pictures';
-var exifTypes    = /jpg/i;
-var slashType    = '\\'; // use \ on Windows
+var unsortedDir = 'Pictures'; // no trailing slash
+var archiveDir  = 'Archived'; // no trailing slash
+var exifTypes   = /jpg/i;
+var slash       = '\\'; // use '\\' on Windows
 
-fs.readdir(allEventsDir, function(err, events) {
+// find all event directories and process them
+fs.readdir(unsortedDir, function(err, events) {
 	if (err) throw err;
 
-	async.eachLimit( events, 1, function iter(eventName, next){
-		var eventDir = allEventsDir + slashType + eventName;
+	async.eachLimit( events, 1, function iter(eventName, next) {
+		var eventDir = unsortedDir + slash + eventName;
 		processEvent(eventDir, eventName);
 
 		next();
 	},
-	function done(err){
-		console.log('done!');
+	function done(err) {
+		console.log('Finished brushing.');
 	});
 });
 
 
+
+
 function processEvent(eventDir, eventName) {
-	console.log(' -- ' + eventDir);
+	console.log(' ++ ' + eventName);
 
 	var eventStart = new Date();
 	var eventEnd   = new Date();
+	var eventFiles = [];
 
 	var files = fs.readdirSync(eventDir);
-	async.eachLimit( files, 1, function iter(fileName, next){
-		var filePath = eventDir + slashType + fileName;
 
+	// process each file
+	async.eachLimit(files, 1, function iter(fileName, next) {
+		var filePath = eventDir + slash + fileName;
+
+		// determine the date of this file, adjust event accordingly
 		if (fileName === '.picasa.ini') {
 			parsePicasaIni(filePath);
-			next();
 		} else {
 			getFileDate(filePath, function (err, fileDate) {
 				//console.log(filePath + ' taken ' + fileDate);
@@ -50,16 +57,32 @@ function processEvent(eventDir, eventName) {
 				if (fileDate > eventEnd) {
 					eventEnd = fileDate;
 				}
-
-				next();
 			});
 		}
+
+		// move the file to its correct archived location
+		var year  = eventStart.getFullYear();
+		var month = eventStart.getMonth() * 1 + 1;
+		    month = month < 10 ? '0' + month : month;
+
+		var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
+		var newFilePath = newEventDir + slash + fileName;
+
+		mkdirp(newEventDir, function(err) {
+			//console.log(' - OLD: ' + filePath);
+			//console.log(' - NEW: ' + newFilePath);
+			fs.rename(filePath, newFilePath);
+		});
+
+		next();
 	},
-	function done(err){
-		console.log(' -- ' + eventName + ' started: ' + eventStart);
-		console.log(' -- ' + eventName + ' ended: ' + eventEnd + "");
-		console.log(' -- Done with ' + eventName + '!\n\n');
+	function done(err) {
+		console.log(' - started: ' + eventStart);
+		console.log(' - ended: ' + eventEnd + "");
+		//updateDB(eventName, eventStart, eventEnd, eventFiles);
 	});
+
+	console.log(' -- Done with ' + eventName + '!\n\n');
 }
 
 function parsePicasaIni(path) {
@@ -124,4 +147,40 @@ function getFileDate(filePath, callback) {
 			callback(err, fileDate);
 		}
 	});
+}
+
+function updateDB(name, start, end, files) {
+	// skew start/end for fuzzy matching?
+	var event = Events.findOne({
+		start: { $gt: start, $lt: end }
+	});
+	console.log(' - Event search found: ' + event);
+
+	if (event && event.id) {
+		Events.update(
+			{ _id: event.id },
+			{
+				$set: {
+					start: start,
+					end:   end,
+					files: files
+				},
+			},
+			{ upsert: true }
+		);
+		console.log(' - Updated DB: ' + name);
+	}
+	else {
+		Events.insert(
+			{
+				$set: {
+					start: start,
+					end:   end,
+					files: files
+				},
+			},
+			{ upsert: true }
+		);
+		console.log(' - Created DB: ' + name);
+	}
 }
