@@ -39,17 +39,14 @@ function processEvent(eventDir, eventName) {
 
 	var files = fs.readdirSync(eventDir);
 
-	// process each file
+	// process each file to figure out this event
 	async.eachLimit(files, 1, function iter(fileName, next) {
 		var filePath = eventDir + slash + fileName;
 
-		// determine the date of this file, adjust event accordingly
 		if (fileName === '.picasa.ini') {
 			parsePicasaIni(filePath);
 		} else {
 			getFileDate(filePath, function(err, fileDate) {
-				//console.log(' - ' + fileName + ' taken ' + fileDate);
-
 				if (fileDate < eventStart) {
 					eventStart = fileDate;
 					eventEnd   = eventStart;
@@ -60,29 +57,40 @@ function processEvent(eventDir, eventName) {
 			});
 		}
 
-		// move the file to its correct archived location
-		var year  = eventStart.getFullYear();
-		var month = eventStart.getMonth() * 1 + 1;
-		    month = month < 10 ? '0' + month : month;
+		next();
+	},
+	// now move the files to their new archived location
+	function done(err) {
+		var files = fs.readdirSync(eventDir);
 
-		var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
-		var newFilePath = newEventDir + slash + fileName;
+		// process each file to figure out this event
+		async.eachLimit(files, 1, function iter(fileName, next) {
+			var filePath = eventDir + slash + fileName;
 
-		mkdirp(newEventDir, function(err) {
-			fs.stat(filePath, function(err, stat) {
-				fs.rename(filePath, newFilePath, function(err) {
-					fs.utimesSync(newFilePath, stat.atime, stat.mtime); // preservation
-					eventFiles.push(newFilePath);
-					console.log(' - ' + filePath + ' -> ' + newFilePath);
-					next();
+			var year  = eventStart.getFullYear();
+			var month = eventStart.getMonth() * 1 + 1;
+			    month = month < 10 ? '0' + month : month;
+
+			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
+			var newFilePath = newEventDir + slash + fileName;
+
+			mkdirp(newEventDir, function(err) {
+				fs.stat(filePath, function(err, stat) {
+					fs.rename(filePath, newFilePath, function(err) {
+						fs.utimes(newFilePath, stat.atime, stat.mtime, function(err) {
+							eventFiles.push(newFilePath);
+							console.log(' - ' + filePath + ' -> ' + newFilePath);
+							next();
+						});
+					});
 				});
 			});
+		},
+		function done(err) {
+			console.log(' - started: ' + eventStart);
+			console.log(' - ended: ' + eventEnd);
+			updateDB(eventName, eventStart, eventEnd, eventFiles);
 		});
-	},
-	function done(err) {
-		console.log(' - started: ' + eventStart);
-		console.log(' - ended: ' + eventEnd);
-		updateDB(eventName, eventStart, eventEnd, eventFiles);
 	});
 
 	console.log(' -- Done with ' + eventName + '!\n\n');
