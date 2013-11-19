@@ -3,10 +3,13 @@ var async     = require('async');
 var fs        = require('fs');
 var ExifImage = require('exif').ExifImage;
 
-var unsortedDir = '/space/Unsorted/Pictures/Picasa'; // no trailing slash
+//var unsortedDir = '/space/Unsorted/Pictures/Picasa'; // no trailing slash
+var unsortedDir = '/Users/empurium/code/brush/pics'; // no trailing slash
 var archiveDir  = 'Archive';  // no trailing slash
 var exifTypes   = /jpg/i;
 var slash       = '/';        // use '\\' on Windows
+
+var events = [];
 
 // find all event directories and process them
 fs.readdir(unsortedDir, function(err, events) {
@@ -50,10 +53,15 @@ function processEvent(eventDir, eventName) {
 				if (fileDate > eventEnd) {
 					eventEnd = fileDate;
 				}
+
+				events[eventDir]['start'] = eventStart;
+				events[eventDir]['end']   = eventEnd;
+
 				next();
 			});
 		}
 	},
+
 	// now move the files to their new archived location
 	function done(err) {
 		var year  = eventStart.getFullYear();
