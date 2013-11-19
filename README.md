@@ -11,6 +11,13 @@ iPhoto does). After they're all imported, you'll go through and sort the picture
 appropriately into "Events". This process is most convenient within a GUI. Afterward,
 you Brush your photo Events into a permanent storage.
 
+## tl;dr how do I use it?
+
+```
+cd Pictures/Imported/
+node brush.js
+```
+
 ## Why?
 
 Google Picasa likes to just dump all of your Events into a flat directory upon
