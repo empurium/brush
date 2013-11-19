@@ -85,7 +85,6 @@ function processEvent(eventDir, eventName) {
 		function done(err) {
 			console.log(' - started: ' + eventStart);
 			console.log(' - ended: ' + eventEnd);
-			saveEvent(eventName, eventStart, eventEnd, eventFiles);
 		});
 	});
 
@@ -154,43 +153,4 @@ function parsePicasaIni(path) {
 		console.log(data);
 	});
 	*/
-}
-
-function findEventsOverlapping(start, end, callback) {
-	// skew start/end for fuzzy matching of event timeframe overlaps
-	// calculate total event minutes, shrink/grow by a percentage
-	var msPerMin = 60000;
-	var fuzzyStartBig   = new Date(start - (fuzzyTime * msPerMin));
-	var fuzzyEndBig     = new Date(end   + (fuzzyTime * msPerMin));
-	var fuzzyStartSmall = new Date(start + (fuzzyTime * msPerMin));
-	var fuzzyEndSmall   = new Date(end   - (fuzzyTime * msPerMin));
-
-	//         [_7:00pm______ Event 1 __________8:00pm_]
-	//
-	//   [_6:45pm________7:30pm_]
-	//              [_7:15pm____________7:45pm_]
-	//                                [_7:35pm___________8:30pm_]
-	/*
-	Events.findOne({
-		$or: [
-			{ start: { $lt: fuzzyStart }, end: { $gt: fuzzyEnd } }, // beginning overlaps
-			{ start: { $lt: fuzzyStart }, end: { $gt: fuzzyEnd } }, // occurs within
-			{ start: { $lt: fuzzyStart }, end: { $gt: fuzzyEnd } }  // end overlaps
-		]
-	}, function(err, event) {
-		if (typeof callback === 'function') {
-			callback(err, event);
-		}
-	});
-	*/
-}
-
-function saveEvent(name, start, end, files) {
-	Events.insert({
-		name:  name,
-		start: start,
-		end:   end,
-		files: files
-	});
-	console.log(' - Created DB: ' + name);
 }
