@@ -5,7 +5,6 @@
 	"engines": {"node": "0.10.2"},
 	"dependencies": {
 		"exif": "0.3.x",
-		"mongoskin": "0.5.x",
 		"async": "0.2.x",
 		"mkdirp": "0.3.x"
 	}

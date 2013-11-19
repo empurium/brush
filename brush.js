@@ -2,10 +2,6 @@ var mkdirp    = require('mkdirp');
 var async     = require('async');
 var fs        = require('fs');
 var ExifImage = require('exif').ExifImage;
-var mongoskin = require('mongoskin');
-
-var db        = mongoskin.db('localhost/brush?auto_reconnect');
-var Events    = db.collection('events');
 
 var unsortedDir = '/space/Unsorted/Pictures/Picasa'; // no trailing slash
 var archiveDir  = 'Archive';  // no trailing slash
