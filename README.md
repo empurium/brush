@@ -1,14 +1,28 @@
 # brush
 
 Brush is a handy script to help you organize your pictures into a directory structure
-that is more suitable for permanent storage. It will also save the events that it
-finds in MongoDB for your own usage, such as a web gallery.
+that is suitable for permanent storage, and ultimately very future-proof.
 
-For example, it will scan through a directory of "Events", read the EXIF data (or fall
-back to file time stamps) to determine the Start and End times of an event, then place
-them into a directory structure which includes the date:
+The idea is that you use a program such as Google Picasa to import your pictures from
+your phone(s), camera(s), video camera(s), etc. Typically the fastest way to
+import pictures with these types of programs is to just click "Import" and let the
+program put them all into one directory (or breka them up in 2 hour timespans like
+iPhoto does). After they're all imported, you'll go through and sort the pictures
+appropriately into "Events". This process is most convenient within a GUI. Afterward,
+you Brush your photo Events into a permanent storage.
+
+## Why?
+
+Google Picasa likes to just dump all of your Events into a flat directory upon
+importing them, eventually leaving you with tens of thousands of events in one place.
+iPhoto likes to just throw them into a single directory named by the date in which
+you imported them, and save XML data once you've done your organization.
+
+Both of these methods are a bit flawed if you prefer a raw filesystem structure so
+that you have more flexibility with what you can do with your photos in the future.
 
 ## This structure
+
 * Imported Pictures/
 	* Surfing In Hawaii/
 	* Luau On The Beach/
@@ -16,6 +30,7 @@ them into a directory structure which includes the date:
 	* Formula Drift at the Las Vegas Speedway/
 
 ## Becomes this structure
+
 * Sorted Pictures/
 	* 2012/
 		* 05/
@@ -28,24 +43,23 @@ them into a directory structure which includes the date:
 		* 04/
 			* Formula Drift at the Las Vegas Speedway/
 
+## How?
 
-## Google Picasa
+You unleash the Brush unto a directory (see below). It will look at each Event,
+scan the EXIF data on each picture within that Event (as well as file timestamps).
+Once the Brush determines the start / end date of each Event, it will create the
+appropriate directory within your Sorted Pictures and move the pictures into it.
 
-Google's Picasa is a great program for importing pictures on your camera. Once you import
-your pictures from your camera, Picasa makes it very easy to select several images,
-right-click and select "Move to New Folder...".
-
-From there, you can simply give it a new Event name. However, it likes to keep all pictures
-in one very large directory. I prefer having them organized by month of the event, which
-is why I put together Picasa's brush.
+Brush uses the earliest date on any given Event photo/video as the assumed date
+of that Event. So if you start taking pictures on April 30th at 2pm for your
+birthday, but you rage until 4am on May 1st - your pictures will end up being
+sorted to the month of your birthday.
 
 
 ## To do
 
 * Have EXIF take precedence when determining file dates
 * Test everything when running with EXIF dates
-* Search for overlapping events, warn if any are found
-* Parse Picasa.ini, note hidden / starred files in MongoDB
 * Clean up output
 
 ## Eventually
