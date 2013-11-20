@@ -15,7 +15,8 @@ you Brush your photo Events into a permanent storage.
 
 ```
 cd Pictures/Imported/
-node brush.js
+node brush.js | tee -a pics.log    # log output to the terminal and a log file
+sort pics.log | less               # browse the async output with a bit of sanity
 ```
 
 ## Why?
