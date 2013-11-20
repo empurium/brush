@@ -9,7 +9,7 @@ var archiveDir  = '/home/empurium/code/brush/archive';  // no trailing slash
 var exifTypes   = /jpg/i;
 var slash       = '/';        // use '\\' on Windows
 
-var eventRanges = [];
+var eventInfo = [];
 
 // find all event directories and process them
 fs.readdir(unsortedDir, function(err, events) {
@@ -17,7 +17,7 @@ fs.readdir(unsortedDir, function(err, events) {
 
 	async.eachLimit( events, 1, function iter(eventName, next) {
 		var eventDir = unsortedDir + slash + eventName;
-		processEvent(eventDir, eventName);
+		decideEventTime(eventDir, eventName);
 
 		next();
 	});
@@ -26,10 +26,10 @@ fs.readdir(unsortedDir, function(err, events) {
 
 
 
-function processEvent(eventDir, eventName) {
+function decideEventTime(eventDir, eventName) {
 	var eventStart            = new Date();
 	var eventEnd              = new Date();
-	    eventRanges[eventDir] = [];
+	    eventInfo[eventDir] = [];
 
 	var files = fs.readdirSync(eventDir);
 
@@ -49,8 +49,8 @@ function processEvent(eventDir, eventName) {
 						eventEnd = fileDate;
 					}
 
-					eventRanges[eventDir]['start'] = eventStart;
-					eventRanges[eventDir]['end']   = eventEnd;
+					eventInfo[eventDir]['start'] = eventStart;
+					eventInfo[eventDir]['end']   = eventEnd;
 
 					next();
 				});
@@ -81,6 +81,7 @@ function moveFiles(eventName, eventDir, newEventDir) {
 			mkdirp(newEventDir, function(err) {
 				//fs.rename(filePath, newFilePath, function(err) {
 					//console.log(' - ' + filePath + ' -> ' + newFilePath);
+					eventInfo[eventDir]['files'].push(newFilePath);
 					next();
 				//});
 			});
