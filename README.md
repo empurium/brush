@@ -68,6 +68,3 @@ sorted to the month of your birthday.
 * Have EXIF take precedence when determining file dates
 * Test everything when running with EXIF dates
 * Clean up output
-
-## Eventually
-* Fuzzy search for overlapping events, warn in case merge is necessary (other people's cameras)
