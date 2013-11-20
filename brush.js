@@ -104,10 +104,10 @@ function getFileDate(filePath, callback) {
 		var fileExt = r[1];
 	}
 
-	// check exif data first
+	// always prefer EXIF data as it's most accurate
 	if (fileExt && fileExt.match(exifTypes)) {
 		new ExifImage({ image: filePath }, function(err, exif) {
-			//if (err) throw err;
+			if (err) throw err;
 
 			//console.log('exif.image.ModifyDate: ' + exif.image.ModifyDate);
 			//console.log('exif.exif.CreateDate: ' + exif.exif.CreateDate);
@@ -119,24 +119,26 @@ function getFileDate(filePath, callback) {
 
 				if (typeof callback === 'function') {
 					callback(fileDate);
+					return;
 				}
 			}
 		});
+	} else {
+		// fall back to timestamps (unreliable)
+		fs.stat(filePath, function(err, stat) {
+			fileDate = stat.mtime;
+			if (fileDate === false) {
+				fileDate = stat.mtime;
+			}
+			if (fileDate === false) {
+				fileDate = stat.mtime;
+			}
+			console.log(filePath + ' DATE STAMP: ' + fileDate);
+
+			if (typeof callback === 'function') {
+				callback(fileDate);
+				return;
+			}
+		});
 	}
-
-	// fall back to timestamps (unreliable)
-	fs.stat(filePath, function(err, stat) {
-		fileDate = stat.mtime;
-		if (fileDate === false) {
-			fileDate = stat.mtime;
-		}
-		if (fileDate === false) {
-			fileDate = stat.mtime;
-		}
-		console.log(filePath + ' DATE STAMP: ' + fileDate);
-
-		if (typeof callback === 'function') {
-			callback(fileDate);
-		}
-	});
 }
