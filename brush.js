@@ -84,11 +84,11 @@ function moveFiles(eventName, eventDir, newEventDir) {
 			var newFilePath = newEventDir + slash + fileName;
 
 			mkdirp(newEventDir, function(err) {
-				//fs.rename(filePath, newFilePath, function(err) {
+				fs.rename(filePath, newFilePath, function(err) {
 					//console.log(' - ' + filePath + ' -> ' + newFilePath);
 					eventInfo[eventDir]['files'].push(newFilePath);
 					return next();
-				//});
+				});
 			});
 		}
 	);
