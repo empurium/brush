@@ -50,7 +50,7 @@ that you have more flexibility with what you can do with your photos in the futu
 		* 04/
 			* Formula Drift at the Las Vegas Speedway/
 
-## How?
+## How does it work?
 
 You unleash the Brush unto a directory (see below). It will look at each Event,
 scan the EXIF data on each picture within that Event (as well as file timestamps).
@@ -62,9 +62,23 @@ of that Event. So if you start taking pictures on April 30th at 2pm for your
 birthday, but you rage until 4am on May 1st - your pictures will end up being
 sorted to the month of your birthday.
 
+## Caveats
+
+Note that EXIF data is obviously the most reliable source for us to assume any
+event's start / end times, because most cameras write EXIF data when the picture
+was taken. Date stamps of the files themselves are most likely to match the date
+that you imported the file, as opposed to the date the picture was taken.
+
+As long as there is at least ONE file in an Event directory with some EXIF data,
+then we'll (pretty safely) assume that is the start / end time of that event.
+This way if you've taken 1 picture and 7 movies, but don't import that event to
+your computer for a month, then the correct date will still be used for that
+event.
+
+However, if no EXIF data is available at all for an event, then we have no choice
+but to use the earliest timestamp of a file - which will most likely be the
+date that you imported these files to your computer.
 
 ## To do
 
-* Have EXIF take precedence when determining file dates
-* Test everything when running with EXIF dates
-* Clean up output
+* Prefer file names for Event dates over file timestamps, such as yyyy-mm-dd.
