@@ -37,24 +37,25 @@ function decideEventTime(eventDir, eventName) {
 		function iter(fileName, next) {
 			var filePath = eventDir + slash + fileName;
 
+			// skip picasa.ini files, they will give us inaccurate dates
 			if (fileName === '.picasa.ini') {
-				next();
-			} else {
-				getFileDate(filePath, fileName, eventName, function(fileDate) {
-					if (fileDate < eventStart) {
-						eventStart = fileDate;
-						eventEnd   = eventStart;
-					}
-					if (fileDate > eventEnd) {
-						eventEnd = fileDate;
-					}
-
-					eventInfo[eventDir]['start'] = eventStart;
-					eventInfo[eventDir]['end']   = eventEnd;
-
-					next();
-				});
+				return next();
 			}
+
+			getFileDate(filePath, fileName, eventName, function(fileDate) {
+				if (fileDate < eventStart) {
+					eventStart = fileDate;
+					eventEnd   = eventStart;
+				}
+				if (fileDate > eventEnd) {
+					eventEnd = fileDate;
+				}
+
+				eventInfo[eventDir]['start'] = eventStart;
+				eventInfo[eventDir]['end']   = eventEnd;
+
+				return next();
+			});
 		},
 		function done(err) {
 			var year  = eventStart.getFullYear();
@@ -83,7 +84,7 @@ function moveFiles(eventName, eventDir, newEventDir) {
 				//fs.rename(filePath, newFilePath, function(err) {
 					//console.log(' - ' + filePath + ' -> ' + newFilePath);
 					eventInfo[eventDir]['files'].push(newFilePath);
-					next();
+					return next();
 				//});
 			});
 		}
