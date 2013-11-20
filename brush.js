@@ -4,8 +4,8 @@ var fs        = require('fs');
 var ExifImage = require('exif').ExifImage;
 
 //var unsortedDir = '/space/Unsorted/Pictures/Picasa'; // no trailing slash
-var unsortedDir = '/home/empurium/code/brush/pics';     // no trailing slash
-var archiveDir  = '/home/empurium/code/brush/archive';  // no trailing slash
+var unsortedDir = '/space/Unsorted/Pictures/Picasa';   // no trailing slash
+var archiveDir  = '/space/Unsorted/Pictures/Archive';  // no trailing slash
 var exifTypes   = /jpg/i;
 var slash       = '/';        // use '\\' on Windows
 
