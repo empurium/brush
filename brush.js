@@ -106,7 +106,6 @@ function getFileDate(filePath, callback) {
 	}
 
 	// check exif data first
-/*
 	if (fileExt && fileExt.match(exifTypes)) {
 		new ExifImage({ image: filePath }, function(err, exif) {
 			//if (err) throw err;
@@ -117,7 +116,7 @@ function getFileDate(filePath, callback) {
 			//console.log('exif.exif.CreateDate: ' + exif.exif.CreateDate);
 			//console.log('exif.exif.DateTimeOriginal: ' + exif.exif.DateTimeOriginal);
 
-			if (exif.exif.DateTimeOriginal) {
+			if (exif && exif.exif && exif.exif.DateTimeOriginal) {
 				fileDate = parseDate(exif.exif.DateTimeOriginal);
 				//console.log(fileDate);
 
@@ -126,23 +125,22 @@ function getFileDate(filePath, callback) {
 				}
 			}
 		});
-	} else {
-*/
-		// fall back to timestamps (unreliable)
-		fs.stat(filePath, function(err, stat) {
-			fileDate = stat.mtime;
-			if (fileDate === false) {
-				fileDate = stat.mtime;
-			}
-			if (fileDate === false) {
-				fileDate = stat.mtime;
-			}
+	}
 
-			if (typeof callback === 'function') {
-				callback(fileDate);
-			}
-		});
-//	}
+	// fall back to timestamps (unreliable)
+	fs.stat(filePath, function(err, stat) {
+		fileDate = stat.mtime;
+		if (fileDate === false) {
+			fileDate = stat.mtime;
+		}
+		if (fileDate === false) {
+			fileDate = stat.mtime;
+		}
+
+		if (typeof callback === 'function') {
+			callback(fileDate);
+		}
+	});
 }
 
 function parsePicasaIni(path) {
