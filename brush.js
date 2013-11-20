@@ -38,7 +38,6 @@ function processEvent(eventDir, eventName) {
 			var filePath = eventDir + slash + fileName;
 
 			if (fileName === '.picasa.ini') {
-				parsePicasaIni(filePath);
 				next();
 			} else {
 				getFileDate(filePath, function(fileDate) {
@@ -138,12 +137,4 @@ function getFileDate(filePath, callback) {
 			callback(fileDate);
 		}
 	});
-}
-
-function parsePicasaIni(path) {
-	/*
-	fs.readFile(path, 'ascii', function(err, data) {
-		console.log(data);
-	});
-	*/
 }
