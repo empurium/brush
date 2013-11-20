@@ -35,20 +35,23 @@ function decideEventTime(eventDir, eventName) {
 
 	async.eachLimit(files, 1,
 		function iter(fileName, next) {
-			var filePath = eventDir + slash + fileName;
-
 			// skip picasa.ini files, they will give us inaccurate dates
 			if (fileName === '.picasa.ini') {
 				return next();
 			}
 
-			getFileDate(filePath, fileName, eventName, function(fileDate) {
+			getFileDate(eventDir, fileName, eventName, function(fileDate) {
 				if (fileDate < eventStart) {
 					eventStart = fileDate;
 					eventEnd   = eventStart;
 				}
-				if (fileDate > eventEnd) {
-					eventEnd = fileDate;
+
+				// only set the event end date if it's a file with EXIF
+				var fileExt = getFileExt(fileName);
+				if (fileExt && fileExt.match(exifTypes)) {
+					if (fileDate > eventEnd) {
+						eventEnd = fileDate;
+					}
 				}
 
 				eventInfo[eventDir]['start'] = eventStart;
@@ -97,18 +100,15 @@ function parseDate(dateString) {
 	return new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5], parts[6]);
 }
 
-function getFileDate(filePath, fileName, eventName, callback) {
+function getFileDate(eventDir, fileName, eventName, callback) {
+	var filePath = eventDir + slash + fileName;
 	var fileDate = false;
-
-	var r = filePath.match(/\.(\w{3,4})$/);
-	if (r && r.length > 0) {
-		var fileExt = r[1];
-	}
+	var fileExt = getFileExt(fileName);
 
 	// always prefer EXIF data as it's most accurate
 	if (fileExt && fileExt.match(exifTypes)) {
 		new ExifImage({ image: filePath }, function(err, exif) {
-			if (err) throw err;
+			//if (err) throw err;
 
 			//console.log('exif.image.ModifyDate: ' + exif.image.ModifyDate);
 			//console.log('exif.exif.CreateDate: ' + exif.exif.CreateDate);
@@ -142,4 +142,12 @@ function getFileDate(filePath, fileName, eventName, callback) {
 			}
 		});
 	}
+}
+
+function getFileExt(fileName) {
+	var x = fileName.match(/\.(\w{3,4})$/);
+	if (x && x.length > 0) {
+		return x[1];
+	}
+	return false;
 }
