@@ -40,7 +40,7 @@ function decideEventTime(eventDir, eventName) {
 			if (fileName === '.picasa.ini') {
 				next();
 			} else {
-				getFileDate(filePath, function(fileDate) {
+				getFileDate(filePath, fileName, eventName, function(fileDate) {
 					if (fileDate < eventStart) {
 						eventStart = fileDate;
 						eventEnd   = eventStart;
@@ -96,7 +96,7 @@ function parseDate(dateString) {
 	return new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5], parts[6]);
 }
 
-function getFileDate(filePath, callback) {
+function getFileDate(filePath, fileName, eventName, callback) {
 	var fileDate = false;
 
 	var r = filePath.match(/\.(\w{3,4})$/);
@@ -115,7 +115,7 @@ function getFileDate(filePath, callback) {
 
 			if (exif && exif.exif && exif.exif.DateTimeOriginal) {
 				fileDate = parseDate(exif.exif.DateTimeOriginal);
-				console.log(filePath + ' EXIF DATE: ' + fileDate);
+				console.log(eventName + '/' + fileName + ' EXIF DATE: ' + fileDate);
 
 				if (typeof callback === 'function') {
 					callback(fileDate);
@@ -133,7 +133,7 @@ function getFileDate(filePath, callback) {
 			if (fileDate === false) {
 				fileDate = stat.mtime;
 			}
-			console.log(filePath + ' DATE STAMP: ' + fileDate);
+			console.log(eventName + '/' + fileName + ' FILE DATE: ' + fileDate);
 
 			if (typeof callback === 'function') {
 				callback(fileDate);
