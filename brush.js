@@ -72,6 +72,7 @@ function decideEventTime(eventDir, eventName) {
 
 function moveFiles(eventName, eventDir, newEventDir) {
 	var files = fs.readdirSync(eventDir);
+	eventInfo[eventDir]['files'] = [];
 
 	async.eachLimit(files, 1,
 		function iter(fileName, next) {
