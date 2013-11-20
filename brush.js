@@ -4,12 +4,12 @@ var fs        = require('fs');
 var ExifImage = require('exif').ExifImage;
 
 //var unsortedDir = '/space/Unsorted/Pictures/Picasa'; // no trailing slash
-var unsortedDir = '/Users/empurium/code/brush/pics'; // no trailing slash
-var archiveDir  = 'Archive';  // no trailing slash
+var unsortedDir = '/Users/empurium/code/brush/pics';     // no trailing slash
+var archiveDir  = '/Users/empurium/code/brush/archive';  // no trailing slash
 var exifTypes   = /jpg/i;
 var slash       = '/';        // use '\\' on Windows
 
-var events = [];
+var eventRanges = [];
 
 // find all event directories and process them
 fs.readdir(unsortedDir, function(err, events) {
@@ -20,9 +20,6 @@ fs.readdir(unsortedDir, function(err, events) {
 		processEvent(eventDir, eventName);
 
 		next();
-	},
-	function done(err) {
-		console.log('Finished brushing.');
 	});
 });
 
@@ -30,14 +27,13 @@ fs.readdir(unsortedDir, function(err, events) {
 
 
 function processEvent(eventDir, eventName) {
-	console.log(' ++ ' + eventName);
+	var eventStart            = new Date();
+	var eventEnd              = new Date();
+	var eventFiles            = [];
+	    eventRanges[eventDir] = [];
 
-	var eventStart = new Date();
-	var eventEnd   = new Date();
-	var eventFiles = [];
-
-	// process each file to figure out this event
 	var files = fs.readdirSync(eventDir);
+
 	async.eachLimit(files, 1, function iter(fileName, next) {
 		var filePath = eventDir + slash + fileName;
 
@@ -45,7 +41,7 @@ function processEvent(eventDir, eventName) {
 			parsePicasaIni(filePath);
 			next();
 		} else {
-			getFileDate(filePath, function(err, fileDate) {
+			getFileDate(filePath, function(fileDate) {
 				if (fileDate < eventStart) {
 					eventStart = fileDate;
 					eventEnd   = eventStart;
@@ -54,23 +50,21 @@ function processEvent(eventDir, eventName) {
 					eventEnd = fileDate;
 				}
 
-				events[eventDir]['start'] = eventStart;
-				events[eventDir]['end']   = eventEnd;
+				console.log(eventName + ': ' + fileDate + ' -> ' + fileName);
+
+				eventRanges[eventDir]['start'] = eventStart;
+				eventRanges[eventDir]['end']   = eventEnd;
 
 				next();
 			});
 		}
 	},
-
-	// now move the files to their new archived location
 	function done(err) {
 		var year  = eventStart.getFullYear();
-		var month = eventStart.getMonth() * 1 + 1;
-		    month = month < 10 ? '0' + month : month;
+		var month = eventEnd.getMonth() * 1 + 1;
+		    month = (month < 10) ? '0' + month : month;
 		var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
-
-		// search for event(s) that have ANY time overlap with this event
-		// we will just WARN about overlapping events at first, eventually prompt
+		console.log(eventName + ' -> ' + newEventDir);
 
 		// process each file to figure out this event
 		var files = fs.readdirSync(eventDir);
@@ -80,23 +74,21 @@ function processEvent(eventDir, eventName) {
 
 			mkdirp(newEventDir, function(err) {
 				fs.stat(filePath, function(err, stat) {
-					fs.rename(filePath, newFilePath, function(err) {
-						fs.utimes(newFilePath, stat.atime, stat.mtime, function(err) {
+					//fs.rename(filePath, newFilePath, function(err) {
+						//fs.utimes(newFilePath, stat.atime, stat.mtime, function(err) {
+							//console.log(' - ' + filePath + ' -> ' + newFilePath);
 							eventFiles.push(newFilePath);
-							console.log(' - ' + filePath + ' -> ' + newFilePath);
 							next();
-						});
-					});
+						//});
+					//});
 				});
 			});
 		},
 		function done(err) {
-			console.log(' - started: ' + eventStart);
-			console.log(' - ended: ' + eventEnd);
+			console.log(eventName + ' began: ' + eventStart);
+			console.log(eventName + ' ended: ' + eventEnd);
 		});
 	});
-
-	console.log(' -- Done with ' + eventName + '!\n\n');
 }
 
 function parseDate(dateString) {
@@ -106,13 +98,15 @@ function parseDate(dateString) {
 }
 
 function getFileDate(filePath, callback) {
+	var fileDate = false;
+
 	var r = filePath.match(/\.(\w{3,4})$/);
 	if (r && r.length > 0) {
 		var fileExt = r[1];
 	}
 
 	// check exif data first
-	/*
+/*
 	if (fileExt && fileExt.match(exifTypes)) {
 		new ExifImage({ image: filePath }, function(err, exif) {
 			//if (err) throw err;
@@ -124,35 +118,31 @@ function getFileDate(filePath, callback) {
 			//console.log('exif.exif.DateTimeOriginal: ' + exif.exif.DateTimeOriginal);
 
 			if (exif.exif.DateTimeOriginal) {
-				var fileDate = parseDate(exif.exif.DateTimeOriginal);
+				fileDate = parseDate(exif.exif.DateTimeOriginal);
 				//console.log(fileDate);
 
-				if (fileDate < eventStart) {
-					eventStart = fileDate;
-				}
-				else if (fileDate > eventEnd) {
-					eventEnd = fileDate;
+				if (typeof callback === 'function') {
+					callback(fileDate);
 				}
 			}
 		});
-	}
-	*/
-
-	// fall back to timestamps (unreliable)
-	var fileDate = false;
-	fs.stat(filePath, function(err, stat) {
-		fileDate = stat.mtime;
-		if (fileDate === false) {
+	} else {
+*/
+		// fall back to timestamps (unreliable)
+		fs.stat(filePath, function(err, stat) {
 			fileDate = stat.mtime;
-		}
-		if (fileDate === false) {
-			fileDate = stat.mtime;
-		}
+			if (fileDate === false) {
+				fileDate = stat.mtime;
+			}
+			if (fileDate === false) {
+				fileDate = stat.mtime;
+			}
 
-		if (typeof callback === 'function') {
-			callback(err, fileDate);
-		}
-	});
+			if (typeof callback === 'function') {
+				callback(fileDate);
+			}
+		});
+//	}
 }
 
 function parsePicasaIni(path) {
