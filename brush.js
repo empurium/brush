@@ -66,8 +66,10 @@ function decideEventTime(eventDir, eventName) {
 			    month = (month < 10) ? '0' + month : month;
 			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
 
-			console.log(eventName + ' began: ' + eventStart);
-			console.log(eventName + ' ended: ' + eventEnd);
+			console.log(eventName + ': ');
+			console.log(' -> started ' + eventStart);
+			console.log(' -> ended ' + eventEnd);
+			console.log(' -> ' + newEventDir);
 
 			moveFiles(eventName, eventDir, newEventDir);
 		}
@@ -116,7 +118,7 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 
 			if (exif && exif.exif && exif.exif.DateTimeOriginal) {
 				fileDate = parseDate(exif.exif.DateTimeOriginal);
-				console.log(eventName + '/' + fileName + ' EXIF DATE: ' + fileDate);
+				//console.log(eventName + '/' + fileName + ' EXIF DATE: ' + fileDate);
 
 				if (typeof callback === 'function') {
 					callback(fileDate);
@@ -134,7 +136,7 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 			if (fileDate === false) {
 				fileDate = stat.mtime;
 			}
-			console.log(eventName + '/' + fileName + ' FILE DATE: ' + fileDate);
+			//console.log(eventName + '/' + fileName + ' FILE DATE: ' + fileDate);
 
 			if (typeof callback === 'function') {
 				callback(fileDate);
