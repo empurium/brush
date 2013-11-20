@@ -1,11 +1,18 @@
-var mkdirp    = require('mkdirp');
-var async     = require('async');
-var fs        = require('fs');
-var ExifImage = require('exif').ExifImage;
+var mkdirp        = require('mkdirp');
+var async         = require('async');
+var fs            = require('fs');
+var child_process = require('child_process');
+var ExifImage     = require('exif').ExifImage;
 
 //var unsortedDir = '/space/Unsorted/Pictures/Picasa'; // no trailing slash
-var unsortedDir = '/space/Unsorted/Pictures/Picasa';   // no trailing slash
-var archiveDir  = '/space/Unsorted/Pictures/Archive';  // no trailing slash
+
+//var unsortedDir = '/space/Unsorted/Pictures/Picasa';   // no trailing slash
+//var archiveDir  = '/space/Unsorted/Pictures/Archive';  // no trailing slash
+var unsortedDir = '/home/empurium/code/brush/pics';     // no trailing slash
+var archiveDir  = '/home/empurium/code/brush/archive';  // no trailing slash
+
+var archiveType = 'copy';     // copy or move pictures?
+
 var exifTypes   = /jpg/i;
 var slash       = '/';        // use '\\' on Windows
 
@@ -70,6 +77,7 @@ function decideEventTime(eventDir, eventName) {
 			console.log(' -> started ' + eventStart);
 			console.log(' -> ended ' + eventEnd);
 			console.log(' -> ' + newEventDir);
+			//console.log(eventInfo);
 
 			moveFiles(eventName, eventDir, newEventDir);
 		}
@@ -86,11 +94,21 @@ function moveFiles(eventName, eventDir, newEventDir) {
 			var newFilePath = newEventDir + slash + fileName;
 
 			mkdirp(newEventDir, function(err) {
-				fs.rename(filePath, newFilePath, function(err) {
-					//console.log(' - ' + filePath + ' -> ' + newFilePath);
-					eventInfo[eventDir]['files'].push(newFilePath);
-					return next();
-				});
+				eventInfo[eventDir]['files'].push(newFilePath);
+				//console.log(' -> ' + filePath + ' -> ' + newFilePath);
+
+				if (archiveType == 'move') {
+					fs.rename(filePath, newFilePath, function(err) {
+						return next();
+					});
+				}
+
+				if (archiveType == 'copy') {
+					child_process.execFile('/bin/cp', ['--no-target-directory', filePath, newFilePath], {}, function(err) {
+						if (err) throw err;
+						return next();
+					});
+				}
 			});
 		}
 	);
