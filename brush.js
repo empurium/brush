@@ -9,7 +9,7 @@ var ExifImage     = require('exif').ExifImage;
 //
 var unsortedDir = '/space/Unsorted/Pictures/Picasa';   // no trailing slash
 var archiveDir  = '/space/Unsorted/Pictures/Archive';  // no trailing slash
-var archiveType = 'copy';     // copy or move pictures?
+var archiveType = 'copy';     // copy, move, or test
 var slash       = '/';        // use '\\' on Windows
 var exifTypes   = /jpg/i;
 
