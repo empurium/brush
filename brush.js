@@ -130,7 +130,7 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 	// always prefer EXIF data as it's most accurate
 	if (fileExt && fileExt.match(exifTypes)) {
 		new ExifImage({ image: filePath }, function(err, exif) {
-			//if (err) throw err;
+			//if (err) throw err;  // corrupt EXIF data shouldn't halt us
 
 			//console.log('exif.image.ModifyDate: ' + exif.image.ModifyDate);
 			//console.log('exif.exif.CreateDate: ' + exif.exif.CreateDate);
