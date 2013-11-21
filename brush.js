@@ -39,13 +39,13 @@ function decideEventTime(eventDir, eventName) {
 
 	async.eachLimit(files, 1,
 		function iter(fileName, next) {
-			// skip picasa.ini files, they will give us inaccurate dates
+			// skip picasa files, they will give us inaccurate dates
 			if (fileName === '.picasa.ini') {
 				return next();
 			}
 
 			getFileDate(eventDir, fileName, eventName, function(fileDate) {
-				if (fileDate == null) {
+				if (fileDate === false) {
 					return next();
 				}
 
@@ -77,7 +77,6 @@ function decideEventTime(eventDir, eventName) {
 			console.log(eventName + ': ');
 			console.log(' -> started ' + eventStart);
 			console.log(' -> ended ' + eventEnd);
-			console.log(' -> ' + newEventDir);
 			//console.log(eventInfo);
 
 			moveFiles(eventName, eventDir, newEventDir);
@@ -86,6 +85,8 @@ function decideEventTime(eventDir, eventName) {
 }
 
 function moveFiles(eventName, eventDir, newEventDir) {
+	console.log(' -> ' + newEventDir);
+
 	var files = fs.readdirSync(eventDir);
 	eventInfo[eventDir]['files'] = [];
 
@@ -123,8 +124,8 @@ function parseDate(dateString) {
 
 function getFileDate(eventDir, fileName, eventName, callback) {
 	var filePath = eventDir + slash + fileName;
+	var fileExt  = getFileExt(fileName);
 	var fileDate = false;
-	var fileExt = getFileExt(fileName);
 
 	// always prefer EXIF data as it's most accurate
 	if (fileExt && fileExt.match(exifTypes)) {
@@ -138,28 +139,22 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 			if (exif && exif.exif && exif.exif.DateTimeOriginal) {
 				fileDate = parseDate(exif.exif.DateTimeOriginal);
 				//console.log(eventName + '/' + fileName + ' EXIF DATE: ' + fileDate);
-
-				if (typeof callback === 'function') {
-					callback(fileDate);
-					return;
-				}
-			} else {
-				// something weird happened, just call the callback
-				if (typeof callback === 'function') {
-					callback(null);
-					return;
-				}
 			}
 		});
+
+		if (typeof callback === 'function') {
+			callback(fileDate);
+			return;
+		}
 	} else {
 		// fall back to timestamps (unreliable)
 		fs.stat(filePath, function(err, stat) {
 			fileDate = stat.mtime;
 			if (fileDate === false) {
-				fileDate = stat.mtime;
+				fileDate = stat.ctime;
 			}
 			if (fileDate === false) {
-				fileDate = stat.mtime;
+				fileDate = stat.atime;
 			}
 			//console.log(eventName + '/' + fileName + ' FILE DATE: ' + fileDate);
 
