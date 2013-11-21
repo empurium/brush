@@ -45,6 +45,10 @@ function decideEventTime(eventDir, eventName) {
 			}
 
 			getFileDate(eventDir, fileName, eventName, function(fileDate) {
+				if (fileDate == null) {
+					return next();
+				}
+
 				if (fileDate < eventStart) {
 					eventStart = fileDate;
 					eventEnd   = eventStart;
@@ -137,6 +141,12 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 
 				if (typeof callback === 'function') {
 					callback(fileDate);
+					return;
+				}
+			} else {
+				// something weird happened, just call the callback
+				if (typeof callback === 'function') {
+					callback(null);
 					return;
 				}
 			}
