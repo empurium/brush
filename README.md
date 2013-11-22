@@ -43,7 +43,6 @@ that you have more flexibility with what you can do with your photos in the futu
 		* 05/
 			* Surfing In Hawaii/
 			* Luau On The Beach/
-	* 2012/
 		* 07/
 			* Camping At Panguitch Lake/
 	* 2013/
