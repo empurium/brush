@@ -2,6 +2,7 @@ var mkdirp        = require('mkdirp');
 var async         = require('async');
 var fs            = require('fs');
 var child_process = require('child_process');
+var spawn         = child_process.spawn;
 var ExifImage     = require('exif').ExifImage;
 
 //
@@ -11,7 +12,13 @@ var unsortedDir = '/space/Unsorted/Pictures/Picasa';   // no trailing slash
 var archiveDir  = '/space/Unsorted/Pictures/Archive';  // no trailing slash
 var archiveType = 'copy';     // copy, move, or test
 var slash       = '/';        // use '\\' on Windows
+
+// exiftool is available at:
+// http://www.sno.phy.queensu.ca/~phil/exiftool/
+var exifTool    = '/usr/local/bin/exiftool';           // path to exiftool binary
+
 var exifTypes   = /jpg/i;
+var xmpTypes    = /(mp4|mov|mts|mpg)/i;
 
 var eventInfo = [];
 
@@ -127,7 +134,7 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 	var fileExt  = getFileExt(fileName);
 	var fileDate = false;
 
-	// always prefer EXIF data as it's most accurate
+	// JPG files - always prefer EXIF metadata
 	if (fileExt && fileExt.match(exifTypes)) {
 		new ExifImage({ image: filePath }, function(err, exif) {
 			//if (err) throw err;  // corrupt EXIF data shouldn't halt us
@@ -146,7 +153,26 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 			callback(fileDate);
 			return;
 		}
-	} else {
+	}
+
+	// Video files - always prefer XMP metadata
+	else if(fileExt && fileExt.match(xmpTypes)) {
+		var xmpScan = spawn(exifTool, [filePath]);
+
+		// Modify Date                     : 2013:07:05 04:01:42
+		// Track Create Date               : 2013:07:05 04:01:30
+		// Track Modify Date               : 2013:07:05 04:01:42
+		// Media Create Date               : 2013:07:05 04:01:30
+		// Media Modify Date               : 2013:07:05 04:01:42
+		// Create Date                     : 2013:07:04 21:01:30-07:00
+		// Creation Date (und-US)          : 2013:07:04 21:01:30-07:00
+
+		xmpScan.stdout.on('data', function(data) {
+			console.log(data);
+		});
+	}
+
+	else {
 		// fall back to timestamps (unreliable)
 		fs.stat(filePath, function(err, stat) {
 			fileDate = stat.mtime;
