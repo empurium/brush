@@ -68,18 +68,25 @@ event's start / end times, because most cameras write EXIF data when the picture
 was taken. Date stamps of the files themselves are most likely to match the date
 that you imported the file, as opposed to the date the picture was taken.
 
-As long as there is at least ONE file in an Event directory with some EXIF data,
-then we'll (pretty safely) assume that is the start / end time of that event.
-This way if you've taken 1 picture and 7 movies, but don't import that event to
-your computer for a month, then the correct date will still be used for that
-event.
+For video files rather than pictures, we can use XMP as opposed to the file
+creation date, as most recording devices do write this metadata. To parse the
+XMP metadata however, you will need the very handy exiftool:
 
-However, if no EXIF data is available at all for an event, then we have no choice
-but to use the earliest timestamp of a file - which will most likely be the
-date that you imported these files to your computer.
+http://www.sno.phy.queensu.ca/~phil/exiftool/
+
+
+As long as there is at least ONE file in an Event directory with some EXIF / XMP
+data, then we'll (pretty safely) assume that is the start / end time of that
+event. This way if you've taken 1 picture and 7 movies, but don't import that
+event to your computer for a month, then the correct date will still be used
+for that event.
+
+However, if no EXIF / XMP data is available at all for an event, then we have
+no choice but to use the earliest timestamp of a file - which will most
+likely be the date that you imported these files to your computer.
+
 
 ## To do
 
 * Prefer file names for Event dates over file timestamps, such as yyyy-mm-dd.
-
 
