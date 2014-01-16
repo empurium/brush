@@ -42,20 +42,20 @@ fs.readdir(unsortedDir, function(err, events) {
 
 
 function decideEventTime(eventDir, eventName) {
-	var eventStart            = new Date();
-	var eventEnd              = new Date();
-	    eventInfo[eventDir] = [];
+	eventInfo[eventDir] = [];
+
+	var eventStart = new Date();
+	var eventEnd   = new Date();
 
 	var files = fs.readdirSync(eventDir);
 
 	async.eachLimit(files, 1,
 		function iter(fileName, next) {
-			// skip picasa files, they will give us inaccurate dates
 			if (fileName === '.picasa.ini') {
 				return next();
 			}
 
-			getFileDate(eventDir, fileName, eventName, function(fileDate) {
+			getFileDate(eventDir, fileName, function(fileDate) {
 				if (fileDate === false) {
 					return next();
 				}
@@ -95,7 +95,7 @@ function decideEventTime(eventDir, eventName) {
 	);
 }
 
-function getFileDate(eventDir, fileName, eventName, callback) {
+function getFileDate(eventDir, fileName, callback) {
 	var filePath = eventDir + slash + fileName;
 	var fileExt  = getFileExt(fileName);
 	var fileDate = false;
@@ -103,20 +103,22 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 	// JPG files - always prefer EXIF metadata
 	if (fileExt && fileExt.match(exifTypes)) {
 		new ExifImage({ image: filePath }, function(err, exif) {
-			//if (err) throw err;  // corrupt EXIF data shouldn't halt us
-
-			//console.log('exif.image.ModifyDate: ' + exif.image.ModifyDate);
-			//console.log('exif.exif.CreateDate: ' + exif.exif.CreateDate);
-			//console.log('exif.exif.DateTimeOriginal: ' + exif.exif.DateTimeOriginal);
+			//if (err) throw err;  // don't halt on corrupt or non-existent EXIF data
 
 			if (exif && exif.exif && exif.exif.DateTimeOriginal) {
 				fileDate = parseDate(exif.exif.DateTimeOriginal);
-				//console.log(eventName + '/' + fileName + ' EXIF DATE: ' + fileDate);
+			}
+			else if (exif && exif.exif && exif.exif.CreateDate) {
+				fileDate = parseDate(exif.exif.CreateDate);
+			}
+			else if (exif && exif.image && exif.image.ModifyDate) {
+				fileDate = parseDate(exif.image.ModifyDate);
+			}
 
-				if (typeof callback === 'function') {
-					callback(fileDate);
-					return;
-				}
+			//console.log(eventDir + '/' + fileName + ' EXIF DATE: ' + fileDate);
+			if (typeof fileDate != 'undefined' && typeof callback === 'function') {
+				callback(fileDate);
+				return;
 			}
 		});
 	}
@@ -138,8 +140,8 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 		});
 	}
 
+	// File Timestamps - fallback (unreliable)
 	else {
-		// fall back to timestamps (unreliable)
 		fs.stat(filePath, function(err, stat) {
 			fileDate = stat.mtime;
 			if (fileDate === false) {
@@ -148,7 +150,7 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 			if (fileDate === false) {
 				fileDate = stat.atime;
 			}
-			//console.log(eventName + '/' + fileName + ' FILE DATE: ' + fileDate);
+			//console.log(eventDir + '/' + fileName + ' FILE DATE: ' + fileDate);
 
 			if (typeof callback === 'function') {
 				callback(fileDate);
