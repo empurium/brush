@@ -113,7 +113,7 @@ function moveFiles(eventName, eventDir, newEventDir) {
 				}
 
 				if (archiveType == 'copy') {
-					child_process.execFile('/bin/cp', ['-r', filePath, newFilePath], {}, function(err) {
+					child_process.execFile('/bin/cp', ['-ar', filePath, newFilePath], {}, function(err) {
 						if (err) throw err;
 						return next();
 					});
