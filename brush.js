@@ -98,9 +98,7 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// JPG files - always prefer EXIF metadata
 	if (fileExt && fileExt.match(exifTypes)) {
-		var exifScan = child_process.spawn(exifTool, ['-j', filePath]);
-
-		exifScan.stdout.on('data', function(stdout) {
+		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
 			var stdout = JSON.parse(stdout.toString());
 			var stdout = stdout[0];
 
@@ -122,17 +120,13 @@ function getFileDate(eventDir, fileName, callback) {
 			else if (stdout.FileModifyDate) {
 				fileDate = parseDate(stdout.FileModifyDate);
 			}
-		});
 
-		exifScan.on('close', function(code) {
 			callback(fileDate);
 		});
 	}
 
 	// Video files - always prefer XMP metadata
 	else if (fileExt && fileExt.match(xmpTypes)) {
-		callback(fileDate);
-		/*
 		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
 			var stdout = JSON.parse(stdout.toString());
 			var stdout = stdout[0];
@@ -155,13 +149,10 @@ function getFileDate(eventDir, fileName, callback) {
 
 			callback(fileDate);
 		});
-		*/
 	}
 
-	// File Timestamps - fallback (unreliable)
+	// File Timestamps - fallback (least accurate)
 	else {
-		callback(fileDate);
-		/*
 		fs.stat(filePath, function(err, stat) {
 			fileDate = stat.mtime;
 			if (fileDate === false) {
@@ -170,12 +161,10 @@ function getFileDate(eventDir, fileName, callback) {
 			if (fileDate === false) {
 				fileDate = stat.atime;
 			}
-			//console.log(eventDir + '/' + fileName + ' FILE DATE: ' + fileDate);
 
 			callback(fileDate);
 			return;
 		});
-		*/
 	}
 }
 
