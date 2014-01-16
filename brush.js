@@ -3,7 +3,6 @@ var async         = require('async');
 var fs            = require('fs');
 var child_process = require('child_process');
 var spawn         = child_process.spawn;
-var ExifImage     = require('exif').ExifImage;
 
 //
 // CONFIGURATION
@@ -51,12 +50,8 @@ function getEventDateRange(eventDir, eventName) {
 
 	async.eachLimit(files, 1,
 		function iter(fileName, next) {
-			if (fileName === '.picasa.ini') {
-				return next();
-			}
-
 			getFileDate(eventDir, fileName, function(fileDate) {
-				if (fileDate === false) {
+				if (fileDate === false || fileName === '.picasa.ini') {
 					return next();
 				}
 
@@ -105,8 +100,7 @@ function getFileDate(eventDir, fileName, callback) {
 		new ExifImage({ image: filePath }, function(err, exif) {
 			//if (err) throw err;  // don't halt on corrupt or non-existent EXIF data
 
-			if (exif && exif.exif && exif.exif.DateTimeOriginal) {
-				fileDate = parseDate(exif.exif.DateTimeOriginal);
+			if (exif && exif.exif && exif.exif.DateTimeOriginal) {				fileDate = parseDate(exif.exif.DateTimeOriginal);
 			}
 			else if (exif && exif.exif && exif.exif.CreateDate) {
 				fileDate = parseDate(exif.exif.CreateDate);
@@ -116,10 +110,8 @@ function getFileDate(eventDir, fileName, callback) {
 			}
 
 			//console.log(eventDir + '/' + fileName + ' EXIF DATE: ' + fileDate);
-			if (typeof fileDate != 'undefined' && typeof callback === 'function') {
-				callback(fileDate);
-				return;
-			}
+			callback(fileDate);
+			return;
 		});
 	}
 
@@ -152,10 +144,8 @@ function getFileDate(eventDir, fileName, callback) {
 			}
 			//console.log(eventDir + '/' + fileName + ' FILE DATE: ' + fileDate);
 
-			if (typeof callback === 'function') {
-				callback(fileDate);
-				return;
-			}
+			callback(fileDate);
+			return;
 		});
 	}
 }
