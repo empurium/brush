@@ -72,6 +72,13 @@ function getEventDateRange(eventDir, eventName, next_event) {
 				eventInfo[eventDir]['start'] = eventStart;
 				eventInfo[eventDir]['end']   = eventEnd;
 
+				// if the event has JPG files, let's skip video files
+				// JPG files are 1000x more reliable and accurate
+				var fileExt  = getFileExt(fileName);
+				if (fileExt && fileExt.match(imageTypes)) {
+					eventInfo[eventDir]['skip_videos'] = true;
+				}
+
 				return next();
 			});
 		},
@@ -84,6 +91,9 @@ function getEventDateRange(eventDir, eventName, next_event) {
 			console.log(eventName + ' (' + files.length + ' files):');
 			console.log(' -> started ' + eventStart);
 			console.log(' -> ended ' + eventEnd);
+			if (eventInfo[eventDir]['skip_videos']) {
+				console.log(' -> (JPG found - skipped video files)');
+			}
 			//console.log(eventInfo);
 
 			moveFiles(eventName, eventDir, newEventDir, function() {
@@ -107,9 +117,13 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// Video files - always prefer XMP metadata
 	else if (fileExt && fileExt.match(videoTypes)) {
-		getVideoExifDate(filePath, function(fileDate) {
-			callback(fileDate);
-		});
+		if ( ! eventInfo[eventDir]['skip_videos'] ) {
+			getVideoExifDate(filePath, function(fileDate) {
+				callback(fileDate);
+			});
+		} else {
+			callback(false);
+		}
 	}
 
 	// File Timestamps - fallback (least accurate)
@@ -234,6 +248,7 @@ function getVideoExifDate(filePath, callback) {
 		else if (stdout.ModifyDate) {
 			fileDate = parseDate(stdout.ModifyDate);
 		}
+		// FileInodeChangeDate and FileAccessDate are typically just today
 
 		if (fileDate !== false) {
 			callback(fileDate);
