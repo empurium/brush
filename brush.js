@@ -13,6 +13,10 @@ var archiveDir  = '/space/Unsorted/Pictures/Archive';  // no trailing slash
 var archiveType = 'copy';     // copy, move, or test
 var slash       = '/';        // use '\\' on Windows
 
+// DEV TESTING
+//var unsortedDir = 'Pictures';
+//var archiveDir  = 'Archive';
+
 // exiftool is available at:
 // http://www.sno.phy.queensu.ca/~phil/exiftool/
 var exifTool    = '/usr/local/bin/exiftool';           // path to exiftool binary
@@ -91,44 +95,6 @@ function decideEventTime(eventDir, eventName) {
 	);
 }
 
-function moveFiles(eventName, eventDir, newEventDir) {
-	console.log(' -> ' + newEventDir);
-
-	var files = fs.readdirSync(eventDir);
-	eventInfo[eventDir]['files'] = [];
-
-	async.eachLimit(files, 1,
-		function iter(fileName, next) {
-			var filePath    = eventDir + slash + fileName;
-			var newFilePath = newEventDir + slash + fileName;
-
-			mkdirp(newEventDir, function(err) {
-				eventInfo[eventDir]['files'].push(newFilePath);
-				//console.log(' -> ' + filePath + ' -> ' + newFilePath);
-
-				if (archiveType == 'move') {
-					fs.rename(filePath, newFilePath, function(err) {
-						return next();
-					});
-				}
-
-				if (archiveType == 'copy') {
-					child_process.execFile('/bin/cp', ['-ar', filePath, newFilePath], {}, function(err) {
-						if (err) throw err;
-						return next();
-					});
-				}
-			});
-		}
-	);
-}
-
-function parseDate(dateString) {
-	// 2012:10:30 19:09:16
-	var parts = dateString.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
-	return new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5], parts[6]);
-}
-
 function getFileDate(eventDir, fileName, eventName, callback) {
 	var filePath = eventDir + slash + fileName;
 	var fileExt  = getFileExt(fileName);
@@ -146,17 +112,17 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 			if (exif && exif.exif && exif.exif.DateTimeOriginal) {
 				fileDate = parseDate(exif.exif.DateTimeOriginal);
 				//console.log(eventName + '/' + fileName + ' EXIF DATE: ' + fileDate);
+
+				if (typeof callback === 'function') {
+					callback(fileDate);
+					return;
+				}
 			}
 		});
-
-		if (typeof callback === 'function') {
-			callback(fileDate);
-			return;
-		}
 	}
 
 	// Video files - always prefer XMP metadata
-	else if(fileExt && fileExt.match(xmpTypes)) {
+	else if (fileExt && fileExt.match(xmpTypes)) {
 		var xmpScan = spawn(exifTool, [filePath]);
 
 		// Modify Date                     : 2013:07:05 04:01:42
@@ -190,6 +156,44 @@ function getFileDate(eventDir, fileName, eventName, callback) {
 			}
 		});
 	}
+}
+
+function moveFiles(eventName, eventDir, newEventDir) {
+	console.log(' -> ' + newEventDir);
+
+	var files = fs.readdirSync(eventDir);
+	eventInfo[eventDir]['files'] = [];
+
+	async.eachLimit(files, 1,
+		function iter(fileName, next) {
+			var filePath    = eventDir + slash + fileName;
+			var newFilePath = newEventDir + slash + fileName;
+
+			mkdirp(newEventDir, function(err) {
+				eventInfo[eventDir]['files'].push(newFilePath);
+				//console.log(' -> ' + filePath + ' -> ' + newFilePath);
+
+				if (archiveType == 'move') {
+					fs.rename(filePath, newFilePath, function(err) {
+						return next();
+					});
+				}
+
+				if (archiveType == 'copy') {
+					child_process.execFile('/bin/cp', ['-a', filePath, newFilePath], {}, function(err) {
+						if (err) throw err;
+						return next();
+					});
+				}
+			});
+		}
+	);
+}
+
+function parseDate(dateString) {
+	// 2012:10:30 19:09:16
+	var parts = dateString.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+	return new Date(parts[1], parts[2]-1, parts[3], parts[4], parts[5], parts[6]);
 }
 
 function getFileExt(fileName) {
