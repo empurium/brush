@@ -85,8 +85,9 @@ function getEventDateRange(eventDir, eventName, next_event) {
 			console.log(' -> ended ' + eventEnd);
 			//console.log(eventInfo);
 
-			moveFiles(eventName, eventDir, newEventDir);
-			next_event();
+			moveFiles(eventName, eventDir, newEventDir, function() {
+				next_event();
+			});
 		}
 	);
 }
@@ -168,13 +169,13 @@ function getFileDate(eventDir, fileName, callback) {
 	}
 }
 
-function moveFiles(eventName, eventDir, newEventDir) {
+function moveFiles(eventName, eventDir, newEventDir, callback) {
 	console.log(' -> ' + newEventDir);
 
 	var files = fs.readdirSync(eventDir);
 	eventInfo[eventDir]['files'] = [];
 
-	async.eachLimit(files, 1,
+	async.eachLimit(files, 3,
 		function iter(fileName, next) {
 			var filePath    = eventDir + slash + fileName;
 			var newFilePath = newEventDir + slash + fileName;
@@ -197,6 +198,10 @@ function moveFiles(eventName, eventDir, newEventDir) {
 					});
 				}
 			});
+		},
+		function done(err) {
+			if (err) throw err;
+			callback();
 		}
 	);
 }
