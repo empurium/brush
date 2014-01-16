@@ -90,7 +90,8 @@ function brushEventFiles(eventDir, eventName, next_event) {
 			var year  = eventStart.getFullYear();
 			var month = eventEnd.getMonth() * 1 + 1;
 			    month = (month < 10) ? '0' + month : month;
-			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
+			//var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
+			var newEventDir = archiveDir + slash + year + slash + eventName;
 
 			console.log(eventName + ' (' + files.length + ' files):');
 			console.log(' -> started ' + eventStart);
