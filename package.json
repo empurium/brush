@@ -4,7 +4,6 @@
 	"private": false,
 	"engines": {"node": "0.10.2"},
 	"dependencies": {
-		"exif": "0.3.x",
 		"async": "0.2.x",
 		"mkdirp": "0.3.x"
 	}

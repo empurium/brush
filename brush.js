@@ -97,21 +97,32 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// JPG files - always prefer EXIF metadata
 	if (fileExt && fileExt.match(exifTypes)) {
-		new ExifImage({ image: filePath }, function(err, exif) {
-			//if (err) throw err;  // don't halt on corrupt or non-existent EXIF data
+		var exifScan = spawn(exifTool, ['-j', filePath]);
 
-			if (exif && exif.exif && exif.exif.DateTimeOriginal) {				fileDate = parseDate(exif.exif.DateTimeOriginal);
+		exifScan.stdout.on('data', function(data) {
+			var data = JSON.parse(data.toString());
+			var data = data[0];
+
+			if (data.DateTimeOriginal) {
+				fileDate = parseDate(data.DateTimeOriginal);
 			}
-			else if (exif && exif.exif && exif.exif.CreateDate) {
-				fileDate = parseDate(exif.exif.CreateDate);
+			else if (data.CreateDate) {
+				fileDate = parseDate(data.CreateDate);
 			}
-			else if (exif && exif.image && exif.image.ModifyDate) {
-				fileDate = parseDate(exif.image.ModifyDate);
+			else if (data.ModifyDate) {
+				fileDate = parseDate(data.ModifyDate);
+			}
+			else if (data.FileInodeChangeDate) {
+				fileDate = parseDate(data.FileInodeChangeDate);
+			}
+			else if (data.FileAccessDate) {
+				fileDate = parseDate(data.FileAccessDate);
+			}
+			else if (data.FileModifyDate) {
+				fileDate = parseDate(data.FileModifyDate);
 			}
 
-			//console.log(eventDir + '/' + fileName + ' EXIF DATE: ' + fileDate);
 			callback(fileDate);
-			return;
 		});
 	}
 
