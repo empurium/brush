@@ -2,7 +2,6 @@ var mkdirp        = require('mkdirp');
 var async         = require('async');
 var fs            = require('fs');
 var child_process = require('child_process');
-var spawn         = child_process.spawn;
 
 //
 // CONFIGURATION
@@ -97,29 +96,29 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// JPG files - always prefer EXIF metadata
 	if (fileExt && fileExt.match(exifTypes)) {
-		var exifScan = spawn(exifTool, ['-j', filePath]);
+		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
+			if (err) throw err;
 
-		exifScan.stdout.on('data', function(data) {
-			var data = JSON.parse(data.toString());
-			var data = data[0];
+			var stdout = JSON.parse(stdout.toString());
+			var stdout = stdout[0];
 
-			if (data.DateTimeOriginal) {
-				fileDate = parseDate(data.DateTimeOriginal);
+			if (stdout.DateTimeOriginal) {
+				fileDate = parseDate(stdout.DateTimeOriginal);
 			}
-			else if (data.CreateDate) {
-				fileDate = parseDate(data.CreateDate);
+			else if (stdout.CreateDate) {
+				fileDate = parseDate(stdout.CreateDate);
 			}
-			else if (data.ModifyDate) {
-				fileDate = parseDate(data.ModifyDate);
+			else if (stdout.ModifyDate) {
+				fileDate = parseDate(stdout.ModifyDate);
 			}
-			else if (data.FileInodeChangeDate) {
-				fileDate = parseDate(data.FileInodeChangeDate);
+			else if (stdout.FileInodeChangeDate) {
+				fileDate = parseDate(stdout.FileInodeChangeDate);
 			}
-			else if (data.FileAccessDate) {
-				fileDate = parseDate(data.FileAccessDate);
+			else if (stdout.FileAccessDate) {
+				fileDate = parseDate(stdout.FileAccessDate);
 			}
-			else if (data.FileModifyDate) {
-				fileDate = parseDate(data.FileModifyDate);
+			else if (stdout.FileModifyDate) {
+				fileDate = parseDate(stdout.FileModifyDate);
 			}
 
 			callback(fileDate);
@@ -128,26 +127,24 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// Video files - always prefer XMP metadata
 	else if (fileExt && fileExt.match(xmpTypes)) {
-		var xmpScan = spawn(exifTool, ['-j', filePath]);
+		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
+			var stdout = JSON.parse(stdout.toString());
+			var stdout = stdout[0];
 
-		xmpScan.stdout.on('data', function(data) {
-			var data = JSON.parse(data.toString());
-			var data = data[0];
-
-			if (data.TrackCreateDate) {
-				fileDate = parseDate(data.TrackCreateDate);
+			if (stdout.TrackCreateDate) {
+				fileDate = parseDate(stdout.TrackCreateDate);
 			}
-			else if (data.TrackModifyDate) {
-				fileDate = parseDate(data.TrackModifyDate);
+			else if (stdout.TrackModifyDate) {
+				fileDate = parseDate(stdout.TrackModifyDate);
 			}
-			else if (data.MediaCreateDate) {
-				fileDate = parseDate(data.MediaCreateDate);
+			else if (stdout.MediaCreateDate) {
+				fileDate = parseDate(stdout.MediaCreateDate);
 			}
-			else if (data.MediaModifyDate) {
-				fileDate = parseDate(data.MediaModifyDate);
+			else if (stdout.MediaModifyDate) {
+				fileDate = parseDate(stdout.MediaModifyDate);
 			}
-			else if (data.ModifyDate) {
-				fileDate = parseDate(data.ModifyDate);
+			else if (stdout.ModifyDate) {
+				fileDate = parseDate(stdout.ModifyDate);
 			}
 
 			callback(fileDate);
