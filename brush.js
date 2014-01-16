@@ -28,7 +28,7 @@ var eventInfo = [];
 fs.readdir(unsortedDir, function(err, events) {
 	if (err) throw err;
 
-	async.eachLimit( events, 1, function iter(eventName, next) {
+	async.eachLimit( events, 3, function iter(eventName, next) {
 		var eventDir = unsortedDir + slash + eventName;
 
 		getEventDateRange(eventDir, eventName, function() {
@@ -47,9 +47,8 @@ function getEventDateRange(eventDir, eventName, next_event) {
 	var eventEnd   = new Date();
 
 	var files = fs.readdirSync(eventDir);
-	console.log(eventName + ' (' + files.length + ' files):');
 
-	async.eachLimit(files, 1,
+	async.eachLimit(files, 5,
 		function iter(fileName, next) {
 			getFileDate(eventDir, fileName, function(fileDate) {
 				if (fileDate === false || fileName === '.picasa.ini') {
@@ -81,6 +80,7 @@ function getEventDateRange(eventDir, eventName, next_event) {
 			    month = (month < 10) ? '0' + month : month;
 			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
 
+			console.log(eventName + ' (' + files.length + ' files):');
 			console.log(' -> started ' + eventStart);
 			console.log(' -> ended ' + eventEnd);
 			//console.log(eventInfo);
