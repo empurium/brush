@@ -128,7 +128,7 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// File Timestamps - fallback (least accurate)
 	else {
-		getFileDate(filePath, function(fileDate) {
+		getPhysicalDate(filePath, function(fileDate) {
 			callback(fileDate);
 		});
 	}
@@ -171,6 +171,7 @@ function moveFiles(eventName, eventDir, newEventDir, callback) {
 	);
 }
 
+
 function parseDate(dateString) {
 	// 2012:10:30 19:09:16
 	var parts = dateString.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
@@ -185,24 +186,19 @@ function getFileExt(fileName) {
 	return false;
 }
 
-function getFileDate(filePath, callback) {
-	fs.stat(filePath, function(err, stat) {
-		var fileDate = stat.mtime;
-		if (fileDate === false) {
-			fileDate = stat.ctime;
-		}
-		if (fileDate === false) {
-			fileDate = stat.atime;
-		}
 
+function getPhysicalDate(filePath, callback) {
+	fs.stat(filePath, function(err, stat) {
+		var fileDate = stat.mtime || stat.ctime || stat.atime;
 		callback(fileDate);
 	});
 }
 
 function getImageExifDate(filePath, callback) {
 	child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
-		var stdout = JSON.parse(stdout.toString());
-		var stdout = stdout[0];
+		var stdout   = JSON.parse(stdout.toString());
+		var stdout   = stdout[0];
+		var fileDate = false;
 
 		if (stdout.DateTimeOriginal) {
 			fileDate = parseDate(stdout.DateTimeOriginal);
@@ -221,7 +217,7 @@ function getImageExifDate(filePath, callback) {
 		if (fileDate !== false) {
 			callback(fileDate);
 		} else {
-			getFileDate(filePath, function(fileDate) {
+			getPhysicalDate(filePath, function(fileDate) {
 				callback(fileDate);
 			});
 		}
@@ -230,8 +226,9 @@ function getImageExifDate(filePath, callback) {
 
 function getVideoExifDate(filePath, callback) {
 	child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
-		var stdout = JSON.parse(stdout.toString());
-		var stdout = stdout[0];
+		var stdout   = JSON.parse(stdout.toString());
+		var stdout   = stdout[0];
+		var fileDate = false;
 
 		if (stdout.TrackCreateDate) {
 			fileDate = parseDate(stdout.TrackCreateDate);
@@ -253,7 +250,7 @@ function getVideoExifDate(filePath, callback) {
 		if (fileDate !== false) {
 			callback(fileDate);
 		} else {
-			getFileDate(filePath, function(fileDate) {
+			getPhysicalDate(filePath, function(fileDate) {
 				callback(fileDate);
 			});
 		}
