@@ -19,10 +19,11 @@ var slash       = '/';        // use '\\' on Windows
 // http://www.sno.phy.queensu.ca/~phil/exiftool/
 var exifTool    = '/usr/local/bin/exiftool';           // path to exiftool binary
 
-var exifTypes   = /jpg/i;
-var xmpTypes    = /(mp4|mov|mts|mpg)/i;
+var imageTypes  = /jpg/i;
+var videoTypes  = /(mp4|mov|mts|mpg)/i;
 
 var eventInfo = [];
+
 
 // find all event directories and process them
 fs.readdir(unsortedDir, function(err, events) {
@@ -62,7 +63,7 @@ function getEventDateRange(eventDir, eventName, next_event) {
 
 				// only set the event end date if it's a file with EXIF
 				var fileExt = getFileExt(fileName);
-				if (fileExt && fileExt.match(exifTypes)) {
+				if (fileExt && fileExt.match(imageTypes)) {
 					if (fileDate > eventEnd) {
 						eventEnd = fileDate;
 					}
@@ -98,68 +99,23 @@ function getFileDate(eventDir, fileName, callback) {
 	var fileDate = false;
 
 	// JPG files - always prefer EXIF metadata
-	if (fileExt && fileExt.match(exifTypes)) {
-		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
-			var stdout = JSON.parse(stdout.toString());
-			var stdout = stdout[0];
-
-			if (stdout.DateTimeOriginal) {
-				fileDate = parseDate(stdout.DateTimeOriginal);
-			}
-			else if (stdout.CreateDate) {
-				fileDate = parseDate(stdout.CreateDate);
-			}
-			else if (stdout.ModifyDate) {
-				fileDate = parseDate(stdout.ModifyDate);
-			}
-			else if (stdout.FileModifyDate) {
-				fileDate = parseDate(stdout.FileModifyDate);
-			}
-			// FileInodeChangeDate and FileAccessDate are typically just today
-
+	if (fileExt && fileExt.match(imageTypes)) {
+		getImageExifDate(filePath, function(fileDate) {
 			callback(fileDate);
 		});
 	}
 
 	// Video files - always prefer XMP metadata
-	else if (fileExt && fileExt.match(xmpTypes)) {
-		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
-			var stdout = JSON.parse(stdout.toString());
-			var stdout = stdout[0];
-
-			if (stdout.TrackCreateDate) {
-				fileDate = parseDate(stdout.TrackCreateDate);
-			}
-			else if (stdout.TrackModifyDate) {
-				fileDate = parseDate(stdout.TrackModifyDate);
-			}
-			else if (stdout.MediaCreateDate) {
-				fileDate = parseDate(stdout.MediaCreateDate);
-			}
-			else if (stdout.MediaModifyDate) {
-				fileDate = parseDate(stdout.MediaModifyDate);
-			}
-			else if (stdout.ModifyDate) {
-				fileDate = parseDate(stdout.ModifyDate);
-			}
-
+	else if (fileExt && fileExt.match(videoTypes)) {
+		getVideoExifDate(filePath, function(fileDate) {
 			callback(fileDate);
 		});
 	}
 
 	// File Timestamps - fallback (least accurate)
 	else {
-		fs.stat(filePath, function(err, stat) {
-			fileDate = stat.mtime;
-			if (fileDate === false) {
-				fileDate = stat.ctime;
-			}
-			if (fileDate === false) {
-				fileDate = stat.atime;
-			}
-
+		getFileDate(filePath, function(fileDate) {
 			callback(fileDate);
-			return;
 		});
 	}
 }
@@ -213,4 +169,78 @@ function getFileExt(fileName) {
 		return x[1];
 	}
 	return false;
+}
+
+function getFileDate(filePath, callback) {
+	fs.stat(filePath, function(err, stat) {
+		var fileDate = stat.mtime;
+		if (fileDate === false) {
+			fileDate = stat.ctime;
+		}
+		if (fileDate === false) {
+			fileDate = stat.atime;
+		}
+
+		callback(fileDate);
+	});
+}
+
+function getImageExifDate(filePath, callback) {
+	child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
+		var stdout = JSON.parse(stdout.toString());
+		var stdout = stdout[0];
+
+		if (stdout.DateTimeOriginal) {
+			fileDate = parseDate(stdout.DateTimeOriginal);
+		}
+		else if (stdout.CreateDate) {
+			fileDate = parseDate(stdout.CreateDate);
+		}
+		else if (stdout.ModifyDate) {
+			fileDate = parseDate(stdout.ModifyDate);
+		}
+		else if (stdout.FileModifyDate) {
+			fileDate = parseDate(stdout.FileModifyDate);
+		}
+		// FileInodeChangeDate and FileAccessDate are typically just today
+
+		if (fileDate !== false) {
+			callback(fileDate);
+		} else {
+			getFileDate(filePath, function(fileDate) {
+				callback(fileDate);
+			});
+		}
+	});
+}
+
+function getVideoExifDate(filePath, callback) {
+	child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
+		var stdout = JSON.parse(stdout.toString());
+		var stdout = stdout[0];
+
+		if (stdout.TrackCreateDate) {
+			fileDate = parseDate(stdout.TrackCreateDate);
+		}
+		else if (stdout.TrackModifyDate) {
+			fileDate = parseDate(stdout.TrackModifyDate);
+		}
+		else if (stdout.MediaCreateDate) {
+			fileDate = parseDate(stdout.MediaCreateDate);
+		}
+		else if (stdout.MediaModifyDate) {
+			fileDate = parseDate(stdout.MediaModifyDate);
+		}
+		else if (stdout.ModifyDate) {
+			fileDate = parseDate(stdout.ModifyDate);
+		}
+
+		if (fileDate !== false) {
+			callback(fileDate);
+		} else {
+			getFileDate(filePath, function(fileDate) {
+				callback(fileDate);
+			});
+		}
+	});
 }
