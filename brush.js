@@ -128,18 +128,29 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// Video files - always prefer XMP metadata
 	else if (fileExt && fileExt.match(xmpTypes)) {
-		var xmpScan = spawn(exifTool, [filePath]);
-
-		// Modify Date                     : 2013:07:05 04:01:42
-		// Track Create Date               : 2013:07:05 04:01:30
-		// Track Modify Date               : 2013:07:05 04:01:42
-		// Media Create Date               : 2013:07:05 04:01:30
-		// Media Modify Date               : 2013:07:05 04:01:42
-		// Create Date                     : 2013:07:04 21:01:30-07:00
-		// Creation Date (und-US)          : 2013:07:04 21:01:30-07:00
+		var xmpScan = spawn(exifTool, ['-j', filePath]);
 
 		xmpScan.stdout.on('data', function(data) {
-			console.log(data);
+			var data = JSON.parse(data.toString());
+			var data = data[0];
+
+			if (data.TrackCreateDate) {
+				fileDate = parseDate(data.TrackCreateDate);
+			}
+			else if (data.TrackModifyDate) {
+				fileDate = parseDate(data.TrackModifyDate);
+			}
+			else if (data.MediaCreateDate) {
+				fileDate = parseDate(data.MediaCreateDate);
+			}
+			else if (data.MediaModifyDate) {
+				fileDate = parseDate(data.MediaModifyDate);
+			}
+			else if (data.ModifyDate) {
+				fileDate = parseDate(data.ModifyDate);
+			}
+
+			callback(fileDate);
 		});
 	}
 
