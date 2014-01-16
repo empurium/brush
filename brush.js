@@ -43,14 +43,26 @@ fs.readdir(unsortedDir, function(err, events) {
 
 function getEventDateRange(eventDir, eventName, next_event) {
 	eventInfo[eventDir] = [];
-
 	var eventStart = new Date();
 	var eventEnd   = new Date();
-
 	var files = fs.readdirSync(eventDir);
+
+	// if the event has JPG files, let's skip video files
+	// JPG files are 1000x more reliable and accurate
+	files.forEach(function(fileName) {
+		var fileExt = getFileExt(fileName);
+		if (fileExt && fileExt.match(imageTypes)) {
+			eventInfo[eventDir]['skip_videos'] = true;
+		}
+		if (fileExt && fileExt.match(videoTypes)) {
+			eventInfo[eventDir]['videos_exist'] = true;
+		}
+	});
 
 	async.eachLimit(files, 5,
 		function iter(fileName, next) {
+			var fileExt = getFileExt(fileName);
+
 			getFileDate(eventDir, fileName, function(fileDate) {
 				if (fileDate === false || fileName === '.picasa.ini') {
 					return next();
@@ -62,7 +74,6 @@ function getEventDateRange(eventDir, eventName, next_event) {
 				}
 
 				// only set the event end date if it's a file with EXIF
-				var fileExt = getFileExt(fileName);
 				if (fileExt && fileExt.match(imageTypes)) {
 					if (fileDate > eventEnd) {
 						eventEnd = fileDate;
@@ -71,13 +82,6 @@ function getEventDateRange(eventDir, eventName, next_event) {
 
 				eventInfo[eventDir]['start'] = eventStart;
 				eventInfo[eventDir]['end']   = eventEnd;
-
-				// if the event has JPG files, let's skip video files
-				// JPG files are 1000x more reliable and accurate
-				var fileExt  = getFileExt(fileName);
-				if (fileExt && fileExt.match(imageTypes)) {
-					eventInfo[eventDir]['skip_videos'] = true;
-				}
 
 				return next();
 			});
@@ -90,10 +94,11 @@ function getEventDateRange(eventDir, eventName, next_event) {
 
 			console.log(eventName + ' (' + files.length + ' files):');
 			console.log(' -> started ' + eventStart);
-			console.log(' -> ended ' + eventEnd);
-			if (eventInfo[eventDir]['skip_videos']) {
+			console.log(' -> ended   ' + eventEnd);
+			if (eventInfo[eventDir]['skip_videos'] && eventInfo[eventDir]['videos_exist']) {
 				console.log(' -> (JPG found - skipped video files)');
 			}
+
 			//console.log(eventInfo);
 
 			moveFiles(eventName, eventDir, newEventDir, function() {
