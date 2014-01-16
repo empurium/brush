@@ -30,22 +30,24 @@ fs.readdir(unsortedDir, function(err, events) {
 
 	async.eachLimit( events, 1, function iter(eventName, next) {
 		var eventDir = unsortedDir + slash + eventName;
-		getEventDateRange(eventDir, eventName);
 
-		next();
+		getEventDateRange(eventDir, eventName, function() {
+			next();
+		});
 	});
 });
 
 
 
 
-function getEventDateRange(eventDir, eventName) {
+function getEventDateRange(eventDir, eventName, next_event) {
 	eventInfo[eventDir] = [];
 
 	var eventStart = new Date();
 	var eventEnd   = new Date();
 
 	var files = fs.readdirSync(eventDir);
+	console.log(eventName + ' (' + files.length + ' files):');
 
 	async.eachLimit(files, 1,
 		function iter(fileName, next) {
@@ -53,7 +55,6 @@ function getEventDateRange(eventDir, eventName) {
 				if (fileDate === false || fileName === '.picasa.ini') {
 					return next();
 				}
-				console.log('Going to run next() after file: ' + filePath);
 
 				if (fileDate < eventStart) {
 					eventStart = fileDate;
@@ -80,12 +81,12 @@ function getEventDateRange(eventDir, eventName) {
 			    month = (month < 10) ? '0' + month : month;
 			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
 
-			//console.log(eventName + ': ');
-			//console.log(' -> started ' + eventStart);
-			//console.log(' -> ended ' + eventEnd);
+			console.log(' -> started ' + eventStart);
+			console.log(' -> ended ' + eventEnd);
 			//console.log(eventInfo);
 
 			moveFiles(eventName, eventDir, newEventDir);
+			next_event();
 		}
 	);
 }
@@ -94,16 +95,12 @@ function getFileDate(eventDir, fileName, callback) {
 	var filePath = eventDir + slash + fileName;
 	var fileExt  = getFileExt(fileName);
 	var fileDate = false;
-	//console.log('Checking: ' + filePath);
 
 	// JPG files - always prefer EXIF metadata
 	if (fileExt && fileExt.match(exifTypes)) {
 		var exifScan = child_process.spawn(exifTool, ['-j', filePath]);
 
 		exifScan.stdout.on('data', function(stdout) {
-			console.log('Data for file: ' + filePath);
-			console.log(stdout);
-
 			var stdout = JSON.parse(stdout.toString());
 			var stdout = stdout[0];
 
@@ -128,7 +125,6 @@ function getFileDate(eventDir, fileName, callback) {
 		});
 
 		exifScan.on('close', function(code) {
-			console.log('exiftool finished: ' + filePath + ': ' + fileDate);
 			callback(fileDate);
 		});
 	}
@@ -195,6 +191,7 @@ function moveFiles(eventName, eventDir, newEventDir) {
 			var newFilePath = newEventDir + slash + fileName;
 
 			mkdirp(newEventDir, function(err) {
+				if (err) throw err;
 				eventInfo[eventDir]['files'].push(newFilePath);
 				//console.log(' -> ' + filePath + ' -> ' + newFilePath);
 
