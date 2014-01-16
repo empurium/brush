@@ -28,7 +28,7 @@ var eventInfo = [];
 fs.readdir(unsortedDir, function(err, events) {
 	if (err) throw err;
 
-	async.eachLimit( events, 20, function iter(eventName, next) {
+	async.eachLimit( events, 1, function iter(eventName, next) {
 		var eventDir = unsortedDir + slash + eventName;
 		getEventDateRange(eventDir, eventName);
 
@@ -47,12 +47,13 @@ function getEventDateRange(eventDir, eventName) {
 
 	var files = fs.readdirSync(eventDir);
 
-	async.eachLimit(files, 10,
+	async.eachLimit(files, 1,
 		function iter(fileName, next) {
 			getFileDate(eventDir, fileName, function(fileDate) {
 				if (fileDate === false || fileName === '.picasa.ini') {
 					return next();
 				}
+				console.log('Going to run next() after file: ' + filePath);
 
 				if (fileDate < eventStart) {
 					eventStart = fileDate;
@@ -79,9 +80,9 @@ function getEventDateRange(eventDir, eventName) {
 			    month = (month < 10) ? '0' + month : month;
 			var newEventDir = archiveDir + slash + year + slash + month + slash + eventName;
 
-			console.log(eventName + ': ');
-			console.log(' -> started ' + eventStart);
-			console.log(' -> ended ' + eventEnd);
+			//console.log(eventName + ': ');
+			//console.log(' -> started ' + eventStart);
+			//console.log(' -> ended ' + eventEnd);
 			//console.log(eventInfo);
 
 			moveFiles(eventName, eventDir, newEventDir);
@@ -93,11 +94,15 @@ function getFileDate(eventDir, fileName, callback) {
 	var filePath = eventDir + slash + fileName;
 	var fileExt  = getFileExt(fileName);
 	var fileDate = false;
+	//console.log('Checking: ' + filePath);
 
 	// JPG files - always prefer EXIF metadata
 	if (fileExt && fileExt.match(exifTypes)) {
-		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
-			if (err) throw err;
+		var exifScan = child_process.spawn(exifTool, ['-j', filePath]);
+
+		exifScan.stdout.on('data', function(stdout) {
+			console.log('Data for file: ' + filePath);
+			console.log(stdout);
 
 			var stdout = JSON.parse(stdout.toString());
 			var stdout = stdout[0];
@@ -120,13 +125,18 @@ function getFileDate(eventDir, fileName, callback) {
 			else if (stdout.FileModifyDate) {
 				fileDate = parseDate(stdout.FileModifyDate);
 			}
+		});
 
+		exifScan.on('close', function(code) {
+			console.log('exiftool finished: ' + filePath + ': ' + fileDate);
 			callback(fileDate);
 		});
 	}
 
 	// Video files - always prefer XMP metadata
 	else if (fileExt && fileExt.match(xmpTypes)) {
+		callback(fileDate);
+		/*
 		child_process.execFile(exifTool, ['-j', filePath], {}, function(err, stdout) {
 			var stdout = JSON.parse(stdout.toString());
 			var stdout = stdout[0];
@@ -149,10 +159,13 @@ function getFileDate(eventDir, fileName, callback) {
 
 			callback(fileDate);
 		});
+		*/
 	}
 
 	// File Timestamps - fallback (unreliable)
 	else {
+		callback(fileDate);
+		/*
 		fs.stat(filePath, function(err, stat) {
 			fileDate = stat.mtime;
 			if (fileDate === false) {
@@ -166,6 +179,7 @@ function getFileDate(eventDir, fileName, callback) {
 			callback(fileDate);
 			return;
 		});
+		*/
 	}
 }
 
