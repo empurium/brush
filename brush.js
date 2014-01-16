@@ -156,13 +156,14 @@ function moveFiles(eventName, eventDir, newEventDir, callback) {
 				//console.log(' -> ' + filePath + ' -> ' + newFilePath);
 
 				if (archiveType == 'move') {
-					fs.rename(filePath, newFilePath, function(err) {
+					child_process.execFile('/bin/mv', ['-n', filePath, newFilePath], {}, function(err) {
+						if (err) throw err;
 						return next();
 					});
 				}
 
 				if (archiveType == 'copy') {
-					child_process.execFile('/bin/cp', ['-a', filePath, newFilePath], {}, function(err) {
+					child_process.execFile('/bin/cp', ['-an', filePath, newFilePath], {}, function(err) {
 						if (err) throw err;
 						return next();
 					});
