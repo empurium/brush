@@ -112,15 +112,10 @@ function getFileDate(eventDir, fileName, callback) {
 			else if (stdout.ModifyDate) {
 				fileDate = parseDate(stdout.ModifyDate);
 			}
-			else if (stdout.FileInodeChangeDate) {
-				fileDate = parseDate(stdout.FileInodeChangeDate);
-			}
-			else if (stdout.FileAccessDate) {
-				fileDate = parseDate(stdout.FileAccessDate);
-			}
 			else if (stdout.FileModifyDate) {
 				fileDate = parseDate(stdout.FileModifyDate);
 			}
+			// FileInodeChangeDate and FileAccessDate are typically just today
 
 			callback(fileDate);
 		});
