@@ -32,7 +32,7 @@ fs.readdir(unsortedDir, function(err, events) {
 
 	async.eachLimit( events, 1, function iter(eventName, next) {
 		var eventDir = unsortedDir + slash + eventName;
-		decideEventTime(eventDir, eventName);
+		getEventDateRange(eventDir, eventName);
 
 		next();
 	});
@@ -41,7 +41,7 @@ fs.readdir(unsortedDir, function(err, events) {
 
 
 
-function decideEventTime(eventDir, eventName) {
+function getEventDateRange(eventDir, eventName) {
 	eventInfo[eventDir] = [];
 
 	var eventStart = new Date();
