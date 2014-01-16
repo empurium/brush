@@ -117,12 +117,12 @@ function getFileDate(eventDir, fileName, callback) {
 
 	// Video files - always prefer XMP metadata
 	else if (fileExt && fileExt.match(videoTypes)) {
-		if ( ! eventInfo[eventDir]['skip_videos'] ) {
+		if (eventInfo[eventDir]['skip_videos']) {
+			callback(false);
+		} else {
 			getVideoExifDate(filePath, function(fileDate) {
 				callback(fileDate);
 			});
-		} else {
-			callback(false);
 		}
 	}
 
