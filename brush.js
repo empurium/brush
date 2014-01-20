@@ -102,6 +102,7 @@ function brushEventFiles(eventDir, eventName, next_event) {
 
 			fs.stat(newEventDir, function(err, stat) {
 				if ( stat && stat.isDirectory() ) {
+					console.log(' -> NOT copying (already exists): ' + newEventDir);
 					next_event();
 				} else {
 					moveFiles(eventName, eventDir, newEventDir, function() {
