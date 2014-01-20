@@ -100,11 +100,17 @@ function brushEventFiles(eventDir, eventName, next_event) {
 				console.log(' -> (JPG found - skipped video files)');
 			}
 
-			//console.log(eventInfo);
-
-			moveFiles(eventName, eventDir, newEventDir, function() {
-				next_event();
+			fs.stat(newEventDir, function(err, stat) {
+				if ( stat && stat.isDirectory() ) {
+					next_event();
+				} else {
+					moveFiles(eventName, eventDir, newEventDir, function() {
+						next_event();
+					});
+				}
 			});
+
+			//console.log(eventInfo);
 		}
 	);
 }
