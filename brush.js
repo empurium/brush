@@ -29,6 +29,18 @@ var eventInfo = [];
 fs.readdir(unsortedDir, function(err, events) {
 	if (err) throw err;
 
+	// We could look in here and traverse more intelligently:
+	//
+	// If it's a directory and there are files within it, we could
+	// assume it's an Event.
+	//
+	// If it's a directory and there is another directory within
+	// it, we could assume it's an irrelevant directory name (year
+	// in our case, but could be 'family pics', etc)
+	//
+	// Either way, we would only assume it's an Event if it's a
+	// directory with nothing but files in it (excluding .picasaoriginals)
+
 	async.eachLimit( events, 3, function iter(eventName, next) {
 		var eventDir = unsortedDir + slash + eventName;
 
